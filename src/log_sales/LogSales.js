@@ -9,7 +9,7 @@ import Select from '@material-ui/core/Select';
 import InputLabel from '@material-ui/core/InputLabel';
 import FormControl from '@material-ui/core/FormControl';
 
-import DatePicker from './Datepicker'
+import DatePicker from '../shared/Datepicker'
 import Title from './../shared/Title'
 import Orders from './OrdersTable';
 import ProductsDropDown from './../shared/ProductsDropdown'
@@ -54,15 +54,26 @@ export default function LogSales() {
 
   const addItemToList = () => {
     var tempArray = saleItems.slice();
-    tempArray.push({
-      id: Math.random(),
-      saleDate: currentDate,
-      saleBranch: currentBranch,
-      saleItem: currentItem.itemName,
-      saleNumberOfItems: currentNumberOfItem,
-      saleIsReturn: currentReturnState,
-      currentItemCode: currentItem.itemCode
-    })
+    const found = tempArray.findIndex(element => element.itemCode == currentItem.itemCode);
+    console.log(found)
+    if(-1 === found){ 
+      tempArray.push({
+        id: Math.random(),
+        saleDate: currentDate,
+        saleBranch: currentBranch,
+        saleItem: currentItem.itemName,
+        saleNumberOfItems: currentNumberOfItem,
+        saleIsReturn: currentReturnState,
+        itemCode: currentItem.itemCode
+      });
+    } else {
+      if(currentReturnState) {
+        tempArray[found].saleNumberOfItems = tempArray[found].saleNumberOfItems - currentNumberOfItem;
+      } else {
+        tempArray[found].saleNumberOfItems = tempArray[found].saleNumberOfItems + currentNumberOfItem;
+      }           
+    }
+    
 
     setSaleItems(tempArray)
   }
@@ -159,6 +170,18 @@ export default function LogSales() {
         <Grid item xs={12}>
           <Paper className={fixedHeightPaper}>
             <Orders saleItems={saleItems} setSaleItems={setSaleItems}/>
+            <div style={{display: 'grid', justifyContent:'flex-end'}}>
+              <Button 
+                className={classes.shortInput} 
+                variant="contained" 
+                color="primary"
+                style={{width: '200px'}}
+                disabled={saleItems.length == 0}
+                >
+                Save
+              </Button>
+            </div>
+            
           </Paper>
         </Grid>        
       </Grid>

@@ -17,22 +17,11 @@ import Paper from '@material-ui/core/Paper';
 import Link from '@material-ui/core/Link';
 import MenuIcon from '@material-ui/icons/Menu';
 import ChevronLeftIcon from '@material-ui/icons/ChevronLeft';
-import NotificationsIcon from '@material-ui/icons/Notifications';
+import ExitToAppIcon from '@material-ui/icons/ExitToApp';
 import { MainListItems, secondaryListItems } from './listItems';
+import { auth } from './../firebaseConfig'
 
-
-function Copyright() {
-  return (
-    <Typography variant="body2" color="textSecondary" align="center">
-      {'Copyright © '}
-      <Link color="inherit" href="https://material-ui.com/">
-        Your Website
-      </Link>{' '}
-      {new Date().getFullYear()}
-      {'.'}
-    </Typography>
-  );
-}
+import { useHistory } from 'react-router-dom'
 
 const drawerWidth = 240;
 
@@ -115,8 +104,9 @@ const useStyles = makeStyles((theme) => ({
   },
 }));
 
-export default function Dashboard() {
+export default function Nav() {
   const classes = useStyles();
+  const history = useHistory()
   const [open, setOpen] = React.useState(false);
   const handleDrawerOpen = () => {
     setOpen(true);
@@ -125,6 +115,19 @@ export default function Dashboard() {
     setOpen(false);
   };
   const fixedHeightPaper = clsx(classes.paper, classes.fixedHeight);
+
+
+  const logout = () => {
+    auth.signOut().then(() => {
+      window.location.replace('http://localhost:3000/login');
+    }).catch((error) => {
+      // An error happened.
+    });
+    
+  
+    // if(auth.isAuthenticated === true)
+    //   auth.signout(() => window.location.replace('http://localhost:3000/login'));
+  }
 
   return (
     <>
@@ -142,6 +145,9 @@ export default function Dashboard() {
           <Typography component="h1" variant="h6" color="inherit" noWrap className={classes.title}>
             SF Inventory Manager
           </Typography>
+          <IconButton color="inherit" onClick={logout}>
+            <ExitToAppIcon/>
+          </IconButton>
         </Toolbar>
       </AppBar>
       <Drawer

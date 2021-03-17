@@ -67,7 +67,7 @@ export default function LogSales() {
               <Grid item xs={12} sm={6} lg={3}>
                 <TextField className={classes.shortInput} id="category-name" onChange={(e) => setValue(e.target.value)} label="Category name" variant="outlined" size="small" />
               </Grid>
-              <Grid item xs={12} sm={2} lg={1}>
+              <Grid item xs={12} sm={6} lg={3}>
                 <Button className={classes.shortInput} onClick={addCategory} disabled={!value || value == ""? true: false} variant="contained" color="primary">
                   Add
                 </Button>

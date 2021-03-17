@@ -79,11 +79,11 @@ export default function LogSales() {
       <Grid container spacing={3}>
         <Grid item xs={12}>
           <Paper className={classes.searchBar}>
-            <Grid className={classes.formRoot} container spacing={3}>
-              <Grid item xs={12} sm={5} lg={5}>
+            <Grid justify="flex-end" className={classes.formRoot} container spacing={3}>
+              <Grid item xs={12} sm={5} lg={3}>
                 <TextField className={classes.shortInput} id="product-name" onChange={(e) => setCurrentProductName(e.target.value)} label="Product name" variant="outlined" size="small" />
               </Grid>
-              <Grid item xs={12} sm={4} lg={5}>
+              <Grid item xs={12} sm={4} lg={2}>
               <FormControl className={classes.shortInput} variant="outlined" size="small">
                 <InputLabel htmlFor="category-selector">Category</InputLabel>
                   <Select
@@ -101,7 +101,7 @@ export default function LogSales() {
                   </Select>
                 </FormControl>
               </Grid>
-              <Grid item xs={12} sm={3} lg={2}>
+              <Grid item xs={12} sm={3} lg={1}>
                 <Button className={classes.shortInput} onClick={addProduct} disabled={!currentProductCat || currentProductCat == "" || !currentProductName || currentProductName == ""? true : false} variant="contained" color="primary">
                   Add
                 </Button>

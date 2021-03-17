@@ -1,4 +1,4 @@
-import React from 'react';
+import React, {useState} from 'react';
 import Avatar from '@material-ui/core/Avatar';
 import Button from '@material-ui/core/Button';
 import CssBaseline from '@material-ui/core/CssBaseline';
@@ -12,19 +12,14 @@ import LockOutlinedIcon from '@material-ui/icons/LockOutlined';
 import Typography from '@material-ui/core/Typography';
 import { makeStyles } from '@material-ui/core/styles';
 import Container from '@material-ui/core/Container';
+import { auth } from './../firebaseConfig'
 
-function Copyright() {
-  return (
-    <Typography variant="body2" color="textSecondary" align="center">
-      {'Copyright © '}
-      <Link color="inherit" href="https://material-ui.com/">
-        Your Website
-      </Link>{' '}
-      {new Date().getFullYear()}
-      {'.'}
-    </Typography>
-  );
-}
+import {
+  Redirect,
+  useLocation,
+} from 'react-router-dom'
+
+import Copyright from './../shared/Copyright'
 
 const useStyles = makeStyles((theme) => ({
   paper: {
@@ -46,7 +41,7 @@ const useStyles = makeStyles((theme) => ({
   },
 }));
 
-export default function SignIn() {
+function SignInComponent({authenticationFunction}) {
   const classes = useStyles();
 
   return (
@@ -92,6 +87,7 @@ export default function SignIn() {
             variant="contained"
             color="primary"
             className={classes.submit}
+            onClick={(e) => {e.preventDefault(); authenticationFunction();}}
           >
             Sign In
           </Button>
@@ -114,4 +110,35 @@ export default function SignIn() {
       </Box>
     </Container>
   );
+}
+
+export default function SignIn({setUser}) {
+  const [
+    redirectToReferrer,
+    setRedirectToReferrer
+  ] = useState(false)
+
+  const { state } = useLocation()
+
+  const login = () => {
+    auth.signInWithEmailAndPassword("supplementfactoryky@gmail.com", '123456')
+    .then((userCredential) => {
+      // Signed in
+      setUser(userCredential.user);
+      setRedirectToReferrer(true);
+      // ...
+    })
+    .catch((error) => {
+      var errorCode = error.code;
+      var errorMessage = error.message;
+    });
+  }
+
+  if (redirectToReferrer === true) {
+    return <Redirect to={state?.from || '/dashboard'} />
+  }
+
+  return (
+    <SignInComponent authenticationFunction={login}/>
+  )
 }

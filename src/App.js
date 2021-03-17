@@ -1,96 +1,88 @@
 
-import React from 'react';
-import clsx from 'clsx';
+import React, { useEffect, useState } from 'react';
 import './App.css';
-
-import Box from '@material-ui/core/Box';
-import Link from '@material-ui/core/Link';
-import Container from '@material-ui/core/Container';
-import Typography from '@material-ui/core/Typography';
+import firebase, { auth, provider } from './firebaseConfig'
+import Backdrop from '@material-ui/core/Backdrop';
+import CircularProgress from '@material-ui/core/CircularProgress';
 import { makeStyles } from '@material-ui/core/styles';
-import CssBaseline from '@material-ui/core/CssBaseline';
+import {
+  BrowserRouter as Router,
+  Route,
+  Redirect,
+  useLocation,
+  useHistory,
+  Switch
+} from 'react-router-dom'
 
-import {BrowserRouter as Router, Switch, Route} from  'react-router-dom';
-
-import Nav from './shared/Nav';
-import Dashboard from './dashboard/Dashboard';
-import LogSales from './log_sales/LogSales';
-import BranchManager from './branch_manager/BranchManager';
-import CategoryManager from './category_manager/CategoryManager';
-import ProductManager from './product_manager/ProductManager'
-
-function Copyright() {
-  return (
-    <Typography variant="body2" color="textSecondary" align="center">
-      {'Copyright © '}
-      <Link color="inherit" href="https://material-ui.com/">
-        Your Website
-      </Link>{' '}
-      {new Date().getFullYear()}
-      {'.'}
-    </Typography>
-  );
-}
-
-const drawerWidth = 240;
+import DashboardLayout from './layouts/dashboardLayout'
+import SignIn from './sign_in/SignIn'
 
 const useStyles = makeStyles((theme) => ({
-  root: {
-    display: 'flex',
-  },
-  appBarSpacer: theme.mixins.toolbar,
-  content: {
-    flexGrow: 1,
-    height: '100vh',
-    overflow: 'auto',
-  },
-  container: {
-    paddingTop: theme.spacing(4),
-    paddingBottom: theme.spacing(4),
-  },
-  paper: {
-    padding: theme.spacing(2),
-    display: 'flex',
-    overflow: 'auto',
-    flexDirection: 'column',
-  },
-  paper: {
-    padding: theme.spacing(2),
-    display: 'flex',
-    overflow: 'auto',
-    flexDirection: 'column',
-  },
-  fixedHeight: {
-    height: 240,
+  backdrop: {
+    zIndex: theme.zIndex.drawer + 1,
+    color: '#fff',
   },
 }));
 
 export default function App() {
   const classes = useStyles();
-  const fixedHeightPaper = clsx(classes.paper, classes.fixedHeight);
+  const [user, setUser] = useState(auth.currentUser);
+  const [isLoading, setIsLoading] = useState(true);
+
+  // auth.onAuthStateChanged(function(user) {
+  //   if (user) {
+  //     // User is signed in.
+  //   } else {
+  //     // No user is signed in.
+  //   }
+  // });
+
+  // auth.onAuthStateChanged((user) => {
+  //   if (user) {
+  //     setUser(user)
+  //   } 
+  // });
+
+  useEffect(() => {
+    auth.onAuthStateChanged((user) => {
+      if (user) {
+        setUser(user);
+      }
+      setIsLoading(false);
+    });
+    
+  },[])
 
   return (
-    <Router>
-      <div className={classes.root}>
-        <CssBaseline />
-        <Nav/>
-        <main className={classes.content}>
-          <div className={classes.appBarSpacer} />
-          <Container maxWidth="lg" className={classes.container}>
-            <Switch>
-              <Route path="/" exact component={Dashboard} />
-              <Route path="/log-sale"  exact component={LogSales} />
-              <Route path="/manage-branches"  exact component={BranchManager} />
-              <Route path="/manage-products" exact component={ProductManager}/>
-              <Route path="/manage-categories" exact component={CategoryManager}/>
-            </Switch>
-            <Box pt={4}>
-              <Copyright />
-            </Box>
-          </Container>
-        </main>
-      </div>
-    </Router>
+    !isLoading? 
+      <Router>
+        <div>
+        <Switch>
+          <Route path="/login" exact>
+            <SignIn setUser={setUser}/>
+          </Route>
+          <PrivateRoute path='/dashboard' user={user}>
+            <DashboardLayout />
+          </PrivateRoute>
+          </Switch>
+        </div>
+      </Router>
+    : <Backdrop className={classes.backdrop} open={isLoading}>
+        <CircularProgress color="inherit" />
+      </Backdrop>
   );
 }
 
+function PrivateRoute({ user, children, ...rest }) {
+  return (
+    <Route {...rest} render={({ location }) => {
+      return user != null
+        ? children
+        : <Redirect to={{
+          pathname: '/login',
+          state: { from: location }
+        }}
+        />
+    }} />
+  )
+}
