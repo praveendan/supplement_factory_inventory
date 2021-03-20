@@ -40,7 +40,7 @@ export default function ConfirmationDialog(props) {
     >
       <DialogTitle id="confirmation-dialog-title">Delete {label}?</DialogTitle>
       <DialogContent dividers>
-        <Typography>Are you sure that you want to delete {label.toLowerCase()} branch? this can't be undone</Typography>
+        <Typography>Are you sure that you want to delete {label.toLowerCase()}? this can't be undone</Typography>
       </DialogContent>
       <DialogActions>
         <Button autoFocus onClick={handleCancel} color="primary">

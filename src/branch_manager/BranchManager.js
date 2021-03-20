@@ -41,7 +41,7 @@ const useStyles = makeStyles((theme) => ({
   }
 }));
 
-export default function LogSales() {
+export default function BranchManager() {
   const classes = useStyles();
   const dbCollectionInstance = dbInstance.collection("branches");
 

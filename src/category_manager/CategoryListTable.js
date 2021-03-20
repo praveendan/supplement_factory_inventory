@@ -12,11 +12,11 @@ const useStyles = makeStyles((theme) => ({
   },
 }));
 
-export default function CategoryListTable({rowData, setCategories}) {
+export default function CategoryListTable({rowData, setCategories, isLoading, deleteFunction}) {
   const classes = useStyles();
   
   const columns = [
-    {field: "id", flex: 1, headerName: "ID" },
+   // {field: "id", flex: 1, headerName: "ID" },
     {field: "name", flex: 2, headerName: "Category name"},
     {
       field: "", width: 100, headerName: 'Action', renderCell: (params) => (
@@ -28,7 +28,7 @@ export default function CategoryListTable({rowData, setCategories}) {
   return (
     <div style={{ display: 'flex', height: 400, width: "100%" }}>
       <div style={{ flexGrow: 1 }}>
-        <DataGrid rows={rowData} columns={columns} pageSize={5} />
+        <DataGrid rows={rowData} columns={columns} pageSize={5} loading={isLoading}/>
       </div>
     </div>
   );
@@ -39,26 +39,24 @@ const ActionCellRenderer = (props) => {
   const [open, setOpen] = useState(false);
   const [currentItem, setCurrentItem] = useState("")
 
-  const showPrompt = (index) => {
-    setCurrentItem(index);
+  const showPrompt = (item) => {
+    setCurrentItem(item.categories[item.rowIndex]);
     setOpen(true);
   }
 
   const removeItem = () => {
-    var tempArray = props.categories.slice();
-    tempArray.splice(currentItem, 1);
-    props.setCategories(tempArray)
+    props.deleteFunction(currentItem)
   }
 
   return (
     <React.Fragment>
-      <IconButton aria-label="delete" onClick={() => showPrompt(props.rowIndex)}>
+      <IconButton aria-label="delete" onClick={() => showPrompt(props)}>
         <DeleteIcon />
       </IconButton>
       <ConfirmationDialog
         id="delete-category-confirmation"
         keepMounted
-        label="Category"
+        label={currentItem && currentItem.name? currentItem.name :""}
         open={open}
         onConfirm={()=>removeItem()}
         onClose={()=>setOpen(false)}

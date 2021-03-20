@@ -1,4 +1,4 @@
-import React,{useState} from 'react';
+import React,{useState, useEffect} from 'react';
 import clsx from 'clsx';
 import { makeStyles } from '@material-ui/core/styles';
 import Grid from '@material-ui/core/Grid';
@@ -6,8 +6,11 @@ import Paper from '@material-ui/core/Paper';
 import Button from '@material-ui/core/Button';
 import TextField from '@material-ui/core/TextField';
 
+import { dbInstance } from './../firebaseConfig';
+
 import Title from '../shared/Title'
 import CategoryListTable from './CategoryListTable';
+import Snackbar from './../shared/Notification'
 
 // Generate Order Data
 function createData(id, name) {
@@ -38,24 +41,68 @@ const useStyles = makeStyles((theme) => ({
   }
 }));
 
-export default function LogSales() {
+export default function CategoryManager() {
   const classes = useStyles();
+  const dbCollectionInstance = dbInstance.collection("categories");
 
   const [value, setValue] = React.useState('');
-  const [categories, setCategories] = useState([
-    createData(0, 'Straps'),
-    createData(1, 'Whey Protein'),
-    createData(2, 'Weight Gainer'),
-    createData(3, 'Belts'),
-  ]);
+  const [categories, setCategories] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [notification, setNotification] = useState("");
+  const [notificationBarOpen, setNotificationBarOpen] = useState(false);
+  //error warning info success
+  const [notificationSeverity, setNotificationSeverity] = useState("error");
 
   const fixedHeightPaper = clsx(classes.paper, classes.fixedHeight);
 
+  useEffect(() => {
+    dbCollectionInstance.onSnapshot((snapshot) => {
+      var categoryList = [];
+      snapshot.forEach((doc) => {
+        categoryList.push(createData(doc.id, doc.data().name))
+      });
+      setCategories(categoryList);
+      setIsLoading(false)
+    }, (error) => {
+      setNotification("Error retrieving data");
+      setNotificationBarOpen(true);
+      setNotificationSeverity("error");
+      console.error("Error retirving info: ", error);
+      setIsLoading(false)
+    });
+  },[])
+
+
   const addCategory = () => {
-    var tempArray = categories.slice();
-    tempArray.unshift(createData(Math.random(), value))
-    setCategories(tempArray)
-  } 
+    let result = categories.filter(category => category.name.toLowerCase() == value.toLowerCase());
+    if(result.length == 0) {
+      dbCollectionInstance.add({
+        name: value,
+      })
+      .then((_docRef) => { })
+      .catch((_error) => {
+        setNotification("Error adding category");
+        setNotificationBarOpen(true);
+        setNotificationSeverity("error");
+      });
+    } else {
+      setNotification("A category with the same name exists");
+      setNotificationBarOpen(true);
+      setNotificationSeverity("warning");
+    }
+  }
+
+  const deleteFunction = (category)  => {
+    dbCollectionInstance.doc(category.id).delete().then(() => {
+      setNotification(`The category ${category.name} has been deleted successfully`);
+      setNotificationBarOpen(true);
+      setNotificationSeverity("success");
+    }).catch((error) => {
+      setNotification(`Error deleting category ${category.name}`);
+      setNotificationBarOpen(true);
+      setNotificationSeverity("error");
+    });
+  }
 
   return (
     <>
@@ -77,10 +124,11 @@ export default function LogSales() {
         </Grid>   
         <Grid item xs={12}>
           <Paper className={fixedHeightPaper}>
-            <CategoryListTable rowData={categories} setCategories={setCategories}/>
+            <CategoryListTable rowData={categories} setCategories={setCategories} isLoading={isLoading} deleteFunction={deleteFunction}/>
           </Paper>
         </Grid>        
       </Grid>
+      <Snackbar isOpen={notificationBarOpen} setOpen={setNotificationBarOpen} severity={notificationSeverity} message={notification}/>
     </>
   );
 }
