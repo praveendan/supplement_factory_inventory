@@ -64,6 +64,9 @@ export default function App() {
           <PrivateRoute path='/dashboard' user={user}>
             <DashboardLayout />
           </PrivateRoute>
+          <PrivateRoute path='/' user={user}>
+            <Redirect to='/dashboard' />
+          </PrivateRoute>
           </Switch>
         </div>
       </Router>
