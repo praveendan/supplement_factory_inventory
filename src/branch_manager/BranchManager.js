@@ -1,4 +1,4 @@
-import React,{useState} from 'react';
+import React, { useState, useEffect } from 'react';
 import clsx from 'clsx';
 import { makeStyles } from '@material-ui/core/styles';
 import Grid from '@material-ui/core/Grid';
@@ -6,8 +6,12 @@ import Paper from '@material-ui/core/Paper';
 import Button from '@material-ui/core/Button';
 import TextField from '@material-ui/core/TextField';
 
+import { dbInstance } from './../firebaseConfig';
+
 import Title from './../shared/Title'
 import BranchListTable from './BranchListTable';
+
+import Snackbar from './../shared/Notification'
 
 // Generate Order Data
 function createData(id, name) {
@@ -18,7 +22,6 @@ const useStyles = makeStyles((theme) => ({
   formRoot: {
     '& > *': {
       padding: theme.spacing(1),
-     // width: '25ch',
     },
   },
   shortInput: {
@@ -40,22 +43,65 @@ const useStyles = makeStyles((theme) => ({
 
 export default function LogSales() {
   const classes = useStyles();
+  const dbCollectionInstance = dbInstance.collection("branches");
 
   const [value, setValue] = React.useState('');
-  const [branches, setBranches] = useState([
-    createData(0, 'Kandy'),
-    createData(1, 'Kurunagala'),
-    createData(2, 'galaha'),
-    createData(3, 'Katugastota'),
-  ]);
+  const [branches, setBranches] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [notification, setNotification] = useState("");
+  const [notificationBarOpen, setNotificationBarOpen] = useState(false);
+  //error warning info success
+  const [notificationSeverity, setNotificationSeverity] = useState("error");
 
   const fixedHeightPaper = clsx(classes.paper, classes.fixedHeight);
 
+  useEffect(() => {
+    dbCollectionInstance.onSnapshot((snapshot) => {
+      var branchList = [];
+      snapshot.forEach((doc) => {
+        branchList.push(createData(doc.id, doc.data().name))
+      });
+      setBranches(branchList);
+      setIsLoading(false)
+    }, (error) => {
+      setNotification("Error retrieving data");
+      setNotificationBarOpen(true);
+      setNotificationSeverity("error");
+      console.error("Error retirving info: ", error);
+      setIsLoading(false)
+    });
+  },[])
+
   const addBranch = () => {
-    var tempArray = branches.slice();
-    tempArray.unshift(createData(Math.random(), value))
-    setBranches(tempArray)
-  } 
+    let result = branches.filter(branch => branch.name.toLowerCase() == value.toLowerCase());
+    if(result.length == 0) {
+      dbCollectionInstance.add({
+        name: value,
+      })
+      .then((_docRef) => { })
+      .catch((_error) => {
+        setNotification("Error adding branch");
+        setNotificationBarOpen(true);
+        setNotificationSeverity("error");
+      });
+    } else {
+      setNotification("A branch with the same name exists");
+      setNotificationBarOpen(true);
+      setNotificationSeverity("warning");
+    }
+  }
+
+  const deleteFunction = (branch)  => {
+    dbCollectionInstance.doc(branch.id).delete().then(() => {
+      setNotification(`The branch ${branch.name} has been deleted successfully`);
+      setNotificationBarOpen(true);
+      setNotificationSeverity("success");
+    }).catch((error) => {
+      setNotification(`Error deleting branch ${branch.name}`);
+      setNotificationBarOpen(true);
+      setNotificationSeverity("error");
+    });
+  }
 
   return (
     <>
@@ -77,10 +123,11 @@ export default function LogSales() {
         </Grid>   
         <Grid item xs={12}>
           <Paper className={fixedHeightPaper}>
-            <BranchListTable rowData={branches} setBranches={setBranches}/>
+            <BranchListTable rowData={branches} setBranches={setBranches} isLoading={isLoading} deleteFunction={deleteFunction}/>
           </Paper>
         </Grid>        
       </Grid>
+      <Snackbar isOpen={notificationBarOpen} setOpen={setNotificationBarOpen} severity={notificationSeverity} message={notification}/>
     </>
   );
 }
