@@ -14,8 +14,8 @@ import BranchListTable from './BranchListTable';
 import Snackbar from './../shared/Notification'
 
 // Generate Order Data
-function createData(id, name) {
-  return { id, name };
+function createData(id, name, isInventorySet) {
+  return { id, name, isInventorySet };
 }
 
 const useStyles = makeStyles((theme) => ({
@@ -59,12 +59,12 @@ export default function BranchManager() {
     dbCollectionInstance.onSnapshot((snapshot) => {
       var branchList = [];
       snapshot.forEach((doc) => {
-        branchList.push(createData(doc.id, doc.data().name))
+        branchList.push(createData(doc.id, doc.data().name, doc.data().isInventorySet))
       });
       setBranches(branchList);
       setIsLoading(false)
     }, (error) => {
-      setNotification("Error retrieving data");
+      setNotification("Error retrieving data.");
       setNotificationBarOpen(true);
       setNotificationSeverity("error");
       console.error("Error retirving info: ", error);
@@ -77,15 +77,16 @@ export default function BranchManager() {
     if(result.length == 0) {
       dbCollectionInstance.add({
         name: value,
+        isInventorySet: false,
       })
       .then((_docRef) => { })
       .catch((_error) => {
-        setNotification("Error adding branch");
+        setNotification("Error adding branch.");
         setNotificationBarOpen(true);
         setNotificationSeverity("error");
       });
     } else {
-      setNotification("A branch with the same name exists");
+      setNotification("A branch with the same name exists.");
       setNotificationBarOpen(true);
       setNotificationSeverity("warning");
     }
@@ -93,7 +94,7 @@ export default function BranchManager() {
 
   const deleteFunction = (branch)  => {
     dbCollectionInstance.doc(branch.id).delete().then(() => {
-      setNotification(`The branch ${branch.name} has been deleted successfully`);
+      setNotification(`The branch ${branch.name} has been deleted successfully.`);
       setNotificationBarOpen(true);
       setNotificationSeverity("success");
     }).catch((error) => {
@@ -102,7 +103,7 @@ export default function BranchManager() {
       setNotificationSeverity("error");
     });
   }
-
+  console.log(branches)
   return (
     <>
       <Title>Branch Manager</Title>

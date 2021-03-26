@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import clsx from 'clsx';
 import { makeStyles } from '@material-ui/core/styles';
 import Grid from '@material-ui/core/Grid';
@@ -9,30 +9,15 @@ import Select from '@material-ui/core/Select';
 import InputLabel from '@material-ui/core/InputLabel';
 import FormControl from '@material-ui/core/FormControl';
 
+import { dbInstance } from './../firebaseConfig';
+
 import Title from '../shared/Title'
 import StockListTable from './StockListTable';
+import Snackbar from './../shared/Notification'
 
 // Generate Order Data
-function createData(id, name, numberOfItems) {
-  return { id, name, numberOfItems, tempNumberUpdate: 0, isUpdated: false };
-}
-
-const branch = {
-  ky: {
-    name: "Kandy"
-  },
-  pera: {
-    name: "Peradeniya"
-  }
-}
-
-const catMap = {
-  whey_protein: {
-    name: 'Whey protein'
-  },
-  creatine: {
-    name: 'Creatine'
-  },
+function createData(id, name, categoryName , numberOfItems) {
+  return { id, name, categoryName, numberOfItems, tempNumberUpdate: 0, isUpdated: false };
 }
 
 const useStyles = makeStyles((theme) => ({
@@ -62,15 +47,112 @@ const useStyles = makeStyles((theme) => ({
 export default function LogSales() {
   const classes = useStyles();
 
-  const [currentStockBranch, setCurrentStockBranch] = React.useState('');
-  const [currentStockCat, setCurrentStockCat] = React.useState('');
-  const [stocks, setStocks] = useState([
-    createData(0, 'gold standard', 5),
-    createData(1, 'platrinum', 10),
-    createData(2, 'creatine mono', 2),
-  ]);
+  const dbInventoryInstance =  dbInstance.collection("inventory");
+
+  const [currentStockBranch, setCurrentStockBranch] = useState('');
+  const [stocks, setStocks] = useState([]);
+
+  const [productsObject, setProductsObject] = useState({});
+  const [branchesObject, setBranchesObject] = useState({});
+  const [categoriesObject, setCategoriesObject] = useState({})
+  const [isLoading, setIsLoading] = useState(false);
+
+  const [notification, setNotification] = useState("");
+  const [notificationBarOpen, setNotificationBarOpen] = useState(false);
+  //error warning info success
+  const [notificationSeverity, setNotificationSeverity] = useState("error");
 
   const fixedHeightPaper = clsx(classes.paper, classes.fixedHeight);
+
+  useEffect(() => {
+    const dbProductInstance = dbInstance.collection("products");
+    const dbCategoryInstance = dbInstance.collection("categories");
+    const dbBranchInstance = dbInstance.collection("branches");
+    dbProductInstance.get()
+    .then((querySnapshot) => {
+      var productList = {};
+      querySnapshot.forEach((doc) => {
+        productList[doc.id] = {
+          name: doc.data().name,
+          category: doc.data().category
+        }
+      });
+      setProductsObject(productList);
+    })
+    .catch((error) => {
+      setNotification("Error retrieving product data. Please try again later.");
+      setNotificationBarOpen(true);
+      setNotificationSeverity("error");
+      console.log("Error getting document:", error);
+      setIsLoading(false);
+    });
+
+    dbCategoryInstance.get()
+    .then((querySnapshot) => {
+      var categoryList = {};
+      querySnapshot.forEach((doc) => {
+        categoryList[doc.id] = {
+          name: doc.data().name
+        }
+      });
+      setCategoriesObject(categoryList);
+    })
+    .catch((error) => {
+      setNotification("Error retrieving category data. Please try again later.");
+      setNotificationBarOpen(true);
+      setNotificationSeverity("error");
+      console.log("Error getting document:", error);
+      setIsLoading(false);
+    });
+
+    dbBranchInstance.get()
+    .then((querySnapshot) => {
+      var branchesList = {};
+      querySnapshot.forEach((doc) => {
+        branchesList[doc.id] = {
+          name: doc.data().name
+        }
+      });
+      setBranchesObject(branchesList);
+    })
+    .catch((error) => {
+      setNotification("Error retrieving branch data. Please try again later.");
+      setNotificationBarOpen(true);
+      setNotificationSeverity("error");
+      console.log("Error getting document:", error);
+      setIsLoading(false);
+    });
+  },[])
+
+  useEffect(() => {
+    if(currentStockBranch && currentStockBranch !== "") {
+      setIsLoading(true);
+      dbInventoryInstance.doc(currentStockBranch).get()
+      .then((doc) => {
+        if (doc.exists) {
+          console.log("Document data:", doc.data());
+          var data = doc.data();
+          var itemArray = [];
+          Object.keys(data).map((d, _key) => {
+            itemArray.push(createData(d, productsObject[d].name, categoriesObject[productsObject[d].category].name, data[d]))
+          });
+          setStocks(itemArray);
+        } else {
+          setNotification("Error loading data. If you have just created the branch, Please try again later.");
+          setNotificationBarOpen(true);
+          setNotificationSeverity("error");
+          console.log("No such document!");
+        }
+        setIsLoading(false);
+      }).catch((error) => {
+        setNotification("Error retrieving data. Please try again later.");
+        setNotificationBarOpen(true);
+        setNotificationSeverity("error");
+        console.log("Error getting document:", error);
+        setIsLoading(false);
+      });
+    }
+  },[currentStockBranch])
 
   return (
     <>
@@ -89,29 +171,16 @@ export default function LogSales() {
                       name: 'branch',
                       id: 'branch-selector',
                     }}
+                    disabled={
+                      Object.keys(productsObject).length === 0 && 
+                      Object.keys(branchesObject).length === 0 && 
+                      Object.keys(categoriesObject).length === 0
+                    }
                     value={currentStockBranch}
                     onChange={(e) => setCurrentStockBranch(e.target.value)}
                   >
                     <option aria-label="None" value="" />
-                    {Object.keys(branch).map((d, key) => (<option key={d} value={d}>{branch[d].name}</option>))}
-                  </Select>
-                </FormControl>
-              </Grid>
-              <Grid item xs={12} sm={6} lg={3}>
-                <FormControl className={classes.shortInput} variant="outlined" size="small">
-                  <InputLabel htmlFor="category-selector">Category</InputLabel>
-                  <Select
-                    native
-                    label="Category"
-                    inputProps={{
-                      name: 'category',
-                      id: 'category-selector',
-                    }}
-                    value={currentStockCat}
-                    onChange={(e) => setCurrentStockCat(e.target.value)}
-                  >
-                    <option aria-label="None" value="" />
-                    {Object.keys(catMap).map((d, key) => (<option key={d} value={d}>{catMap[d].name}</option>))}
+                    {Object.keys(branchesObject).map((d, _key) => (<option key={d} value={d}>{branchesObject[d].name}</option>))}
                   </Select>
                 </FormControl>
               </Grid>
@@ -120,10 +189,11 @@ export default function LogSales() {
         </Grid>
         <Grid item xs={12}>
           <Paper className={fixedHeightPaper}>
-            <StockListTable rowData={stocks} setStocks={setStocks} />
+            <StockListTable rowData={stocks} setStocks={setStocks} isLoading={isLoading}/>
           </Paper>
         </Grid>
       </Grid>
+      <Snackbar isOpen={notificationBarOpen} setOpen={setNotificationBarOpen} severity={notificationSeverity} message={notification}/>
     </>
   );
 }

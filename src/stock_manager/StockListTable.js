@@ -14,11 +14,12 @@ const useStyles = makeStyles((theme) => ({
   },
 }));
 
-export default function StockListTable({ rowData, setStocks }) {
+export default function StockListTable({ rowData, setStocks, isLoading }) {
   const classes = useStyles();
   const columns= [
     { field: "id", flex: 1, headerName: "Id" },
     { field: "name", flex: 2, headerName: "Name" },
+    { field: "categoryName", flex: 2, headerName: "Category" },
     { field:"numberOfItems", flex: 2, headerName: "Stock", renderCell: (params) => (
       <StockNumberMapper {...params}/>
     ),},
@@ -32,7 +33,7 @@ export default function StockListTable({ rowData, setStocks }) {
   return (
     <div style={{ display: 'flex', height: 400, width: "100%" }}>
       <div style={{ flexGrow: 1 }}>
-        <DataGrid rows={rowData} columns={columns} pageSize={5} />
+        <DataGrid rows={rowData} columns={columns} pageSize={5} loading={isLoading}/>
       </div>
     </div>
   );

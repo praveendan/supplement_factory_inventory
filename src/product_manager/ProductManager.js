@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import clsx from 'clsx';
 import { makeStyles } from '@material-ui/core/styles';
 import Grid from '@material-ui/core/Grid';
@@ -9,21 +9,15 @@ import Select from '@material-ui/core/Select';
 import InputLabel from '@material-ui/core/InputLabel';
 import FormControl from '@material-ui/core/FormControl';
 
+import { dbInstance } from './../firebaseConfig';
+
 import Title from '../shared/Title'
 import ProductListTable from './ProductListTable';
+import Snackbar from './../shared/Notification'
 
 // Generate Order Data
 function createData(id, category, name) {
   return { id, category, name };
-}
-
-const catMap = {
-  whey_protein: {
-    name : 'Whey protein'
-  },
-  creatine: {
-    name : 'Creatine'
-  },
 }
 
 const useStyles = makeStyles((theme) => ({
@@ -52,25 +46,77 @@ const useStyles = makeStyles((theme) => ({
 
 export default function LogSales() {
   const classes = useStyles();
-
-  const [currentProductName, setCurrentProductName] = React.useState('');
-  const [currentProductCat, setCurrentProductCat] = React.useState('');
-  const [products, setProducts] = useState([
-    createData(0, 'whey_protein', 'gold standard'),
-    createData(1, 'whey_protein', 'platrinum'),
-    createData(2, 'creatine', 'creatine mono'),
-  ]);
+  const dbCollectionInstance = dbInstance.collection("products");
+  const [categoriesList, setCategoriesList] = useState({});
+  const [isLoading, setIsLoading] = useState(true);
+  const [currentProductName, setCurrentProductName] = useState('');
+  const [currentProductCat, setCurrentProductCat] = useState('');
+  const [products, setProducts] = useState([]);
+  const [notification, setNotification] = useState("");
+  const [notificationBarOpen, setNotificationBarOpen] = useState(false);
+  //error warning info success
+  const [notificationSeverity, setNotificationSeverity] = useState("error");
 
   const fixedHeightPaper = clsx(classes.paper, classes.fixedHeight);
 
+  useEffect(() => {
+    dbInstance.collection("categories").get()
+    .then((querySnapshot) => {
+      var categoryList = {};
+      querySnapshot.forEach((doc) => {
+        categoryList[doc.id] = {
+          name: doc.data().name
+        }
+      });
+      setCategoriesList(categoryList);
+    });
+
+    dbCollectionInstance.onSnapshot((snapshot) => {
+      var productList = [];
+      snapshot.forEach((doc) => {
+        productList.push(createData(doc.id, doc.data().category, doc.data().name))
+      });
+      setProducts(productList);
+      setIsLoading(false)
+    }, (error) => {
+      setNotification("Error retrieving data.");
+      setNotificationBarOpen(true);
+      setNotificationSeverity("error");
+      console.error("Error retirving info: ", error);
+      setIsLoading(false)
+    });
+  },[])
+
   const addProduct = () => {
-    var tempArray = products.slice();
-    var duplicateCheck = products.find(element => element.category == currentProductCat && element.name == currentProductName);
-    if(!duplicateCheck){
-      tempArray.unshift(createData(Math.random(), currentProductCat, currentProductName))
-      setProducts(tempArray)
+    let result = products.filter(product => product.name.toLowerCase() == currentProductName.toLowerCase());
+    if(result.length == 0) {
+      dbCollectionInstance.add({
+        name: currentProductName,
+        category: currentProductCat
+      })
+      .then((_docRef) => { })
+      .catch((_error) => {
+        setNotification("Error adding product.");
+        setNotificationBarOpen(true);
+        setNotificationSeverity("error");
+      });
+    } else {
+      setNotification("A product with the same name exists.");
+      setNotificationBarOpen(true);
+      setNotificationSeverity("warning");
     }
-    
+  }
+
+  const deleteFunction = (product)  => {
+    dbCollectionInstance.doc(product.id).delete().then(() => {
+      setNotification(`The product ${product.name} has been deleted successfully.`);
+      setNotificationBarOpen(true);
+      setNotificationSeverity("success");
+    }).catch((error) => {
+      setNotification(`Error deleting product ${product.name}`);
+      setNotificationBarOpen(true);
+      setNotificationSeverity("error");
+    });
   }
 
   return (
@@ -97,7 +143,7 @@ export default function LogSales() {
                     onChange={(e) => setCurrentProductCat(e.target.value)}
                   >
                     <option aria-label="None" value="" />
-                    { Object.keys(catMap).map((d, key) => (<option key={d} value={d}>{catMap[d].name}</option>))}
+                    { Object.keys(categoriesList).map((d, key) => (<option key={d} value={d}>{categoriesList[d].name}</option>))}
                   </Select>
                 </FormControl>
               </Grid>
@@ -111,10 +157,11 @@ export default function LogSales() {
         </Grid>
         <Grid item xs={12}>
           <Paper className={fixedHeightPaper}>
-            <ProductListTable rowData={products} setProducts={setProducts} />
+            <ProductListTable rowData={products} isLoading={isLoading} categoriesList={categoriesList} deleteFunction={deleteFunction}/>
           </Paper>
         </Grid>
       </Grid>
+      <Snackbar isOpen={notificationBarOpen} setOpen={setNotificationBarOpen} severity={notificationSeverity} message={notification}/>
     </>
   );
 }

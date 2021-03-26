@@ -64,7 +64,7 @@ export default function CategoryManager() {
       setCategories(categoryList);
       setIsLoading(false)
     }, (error) => {
-      setNotification("Error retrieving data");
+      setNotification("Error retrieving data.");
       setNotificationBarOpen(true);
       setNotificationSeverity("error");
       console.error("Error retirving info: ", error);
@@ -81,12 +81,12 @@ export default function CategoryManager() {
       })
       .then((_docRef) => { })
       .catch((_error) => {
-        setNotification("Error adding category");
+        setNotification("Error adding category.");
         setNotificationBarOpen(true);
         setNotificationSeverity("error");
       });
     } else {
-      setNotification("A category with the same name exists");
+      setNotification("A category with the same name exists.");
       setNotificationBarOpen(true);
       setNotificationSeverity("warning");
     }
@@ -94,7 +94,7 @@ export default function CategoryManager() {
 
   const deleteFunction = (category)  => {
     dbCollectionInstance.doc(category.id).delete().then(() => {
-      setNotification(`The category ${category.name} has been deleted successfully`);
+      setNotification(`The category ${category.name} has been deleted successfully.`);
       setNotificationBarOpen(true);
       setNotificationSeverity("success");
     }).catch((error) => {

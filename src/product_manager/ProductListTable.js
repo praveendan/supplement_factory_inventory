@@ -12,18 +12,18 @@ const useStyles = makeStyles((theme) => ({
   },
 }));
 
-export default function ProductListTable({ rowData, setProducts }) {
+export default function ProductListTable({ rowData, isLoading, categoriesList, deleteFunction }) {
   const classes = useStyles();
 
   const columns= [
-    { field: "id", flex: 1, headerName: "Id" },
+   // { field: "id", flex: 1, headerName: "Id" },
     { field: "name", flex: 2, headerName: "Product name" },
     { field:"category", flex: 2, headerName: "Product category", renderCell: (params) => (
-      <ProductCategoryMapper {...params}/>
+      <ProductCategoryMapper categoriesList={categoriesList} {...params}/>
     ),},
     {
-      field: "", width: 100, headerName: 'Action', renderCell: (params) => (
-        <ActionCellRenderer products={rowData} setProducts={setProducts} rowIndex={params.rowIndex} />
+      field: "id", width: 100, headerName: 'Action', renderCell: (params) => (
+        <ActionCellRenderer deleteFunction={deleteFunction} {...params}/>
       ),
     },
   ];
@@ -31,51 +31,41 @@ export default function ProductListTable({ rowData, setProducts }) {
   return (
     <div style={{ display: 'flex', height: 400, width: "100%" }}>
       <div style={{ flexGrow: 1 }}>
-        <DataGrid rows={rowData} columns={columns} pageSize={5} />
+        <DataGrid rows={rowData} columns={columns} pageSize={5} loading={isLoading}/>
       </div>
     </div>
   );
 }
 
-const catMap = {
-  whey_protein: {
-    name : 'Whey protein'
-  },
-  creatine: {
-    name : 'Creatine'
-  },
-}
 const ProductCategoryMapper = (props) => {
   return (
-    catMap[props.value].name
+    props.categoriesList && props.categoriesList[props.value] && props.categoriesList[props.value].name? 
+    props.categoriesList[props.value].name : "Deleted category"
   )
 }
 
 const ActionCellRenderer = (props) => {
-
   const [open, setOpen] = useState(false);
   const [currentItem, setCurrentItem] = useState("")
 
-  const showPrompt = (index) => {
-    setCurrentItem(index);
+  const showPrompt = (item) => {
+    setCurrentItem(item);
     setOpen(true);
   }
 
   const removeItem = () => {
-    var tempArray = props.products.slice();
-    tempArray.splice(currentItem, 1);
-    props.setProducts(tempArray)
+    props.deleteFunction(currentItem);
   }
 
   return (
     <React.Fragment>
-      <IconButton aria-label="delete" onClick={() => showPrompt(props.rowIndex)}>
+      <IconButton aria-label="delete" onClick={() => showPrompt(props.row)}>
         <DeleteIcon />
       </IconButton>
       <ConfirmationDialog
         id="delete-product-confirmation"
         keepMounted
-        label="Product"
+        label={currentItem.name}
         open={open}
         onConfirm={() => removeItem()}
         onClose={() => setOpen(false)}
