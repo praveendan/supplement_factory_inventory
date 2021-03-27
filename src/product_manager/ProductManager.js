@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import clsx from 'clsx';
 import { makeStyles } from '@material-ui/core/styles';
 import Grid from '@material-ui/core/Grid';
@@ -13,7 +13,9 @@ import { dbInstance } from './../firebaseConfig';
 
 import Title from '../shared/Title'
 import ProductListTable from './ProductListTable';
-import Snackbar from './../shared/Notification'
+import Snackbar from './../shared/Notification';
+
+import { ReferenceDataContext } from "./../ReferenceDataContext";
 
 // Generate Order Data
 function createData(id, category, name) {
@@ -47,7 +49,7 @@ const useStyles = makeStyles((theme) => ({
 export default function LogSales() {
   const classes = useStyles();
   const dbCollectionInstance = dbInstance.collection("products");
-  const [categoriesList, setCategoriesList] = useState({});
+  const { categoriesObject } = useContext(ReferenceDataContext);
   const [isLoading, setIsLoading] = useState(true);
   const [currentProductName, setCurrentProductName] = useState('');
   const [currentProductCat, setCurrentProductCat] = useState('');
@@ -60,17 +62,6 @@ export default function LogSales() {
   const fixedHeightPaper = clsx(classes.paper, classes.fixedHeight);
 
   useEffect(() => {
-    dbInstance.collection("categories").get()
-    .then((querySnapshot) => {
-      var categoryList = {};
-      querySnapshot.forEach((doc) => {
-        categoryList[doc.id] = {
-          name: doc.data().name
-        }
-      });
-      setCategoriesList(categoryList);
-    });
-
     dbCollectionInstance.onSnapshot((snapshot) => {
       var productList = [];
       snapshot.forEach((doc) => {
@@ -143,7 +134,7 @@ export default function LogSales() {
                     onChange={(e) => setCurrentProductCat(e.target.value)}
                   >
                     <option aria-label="None" value="" />
-                    { Object.keys(categoriesList).map((d, key) => (<option key={d} value={d}>{categoriesList[d].name}</option>))}
+                    { Object.keys(categoriesObject).map((d, key) => (<option key={d} value={d}>{categoriesObject[d].name}</option>))}
                   </Select>
                 </FormControl>
               </Grid>
@@ -157,7 +148,7 @@ export default function LogSales() {
         </Grid>
         <Grid item xs={12}>
           <Paper className={fixedHeightPaper}>
-            <ProductListTable rowData={products} isLoading={isLoading} categoriesList={categoriesList} deleteFunction={deleteFunction}/>
+            <ProductListTable rowData={products} isLoading={isLoading} categoriesList={categoriesObject} deleteFunction={deleteFunction}/>
           </Paper>
         </Grid>
       </Grid>

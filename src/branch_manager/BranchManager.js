@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import clsx from 'clsx';
 import { makeStyles } from '@material-ui/core/styles';
 import Grid from '@material-ui/core/Grid';
@@ -12,6 +12,8 @@ import Title from './../shared/Title'
 import BranchListTable from './BranchListTable';
 
 import Snackbar from './../shared/Notification'
+
+import { ReferenceDataContext } from "./../ReferenceDataContext";
 
 // Generate Order Data
 function createData(id, name, isInventorySet) {
@@ -47,7 +49,8 @@ export default function BranchManager() {
 
   const [value, setValue] = React.useState('');
   const [branches, setBranches] = useState([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const { branchesObject } = useContext(ReferenceDataContext);
+  const [isLoading, setIsLoading] = useState(false);
   const [notification, setNotification] = useState("");
   const [notificationBarOpen, setNotificationBarOpen] = useState(false);
   //error warning info success
@@ -56,21 +59,12 @@ export default function BranchManager() {
   const fixedHeightPaper = clsx(classes.paper, classes.fixedHeight);
 
   useEffect(() => {
-    dbCollectionInstance.onSnapshot((snapshot) => {
-      var branchList = [];
-      snapshot.forEach((doc) => {
-        branchList.push(createData(doc.id, doc.data().name, doc.data().isInventorySet))
-      });
-      setBranches(branchList);
-      setIsLoading(false)
-    }, (error) => {
-      setNotification("Error retrieving data.");
-      setNotificationBarOpen(true);
-      setNotificationSeverity("error");
-      console.error("Error retirving info: ", error);
-      setIsLoading(false)
+    var branchList = [];
+    Object.keys(branchesObject).map((d, key) => {
+      branchList.push(createData(d, branchesObject[d].name, branchesObject[d].isInventorySet))
     });
-  },[])
+    setBranches(branchList);
+  },[branchesObject])
 
   const addBranch = () => {
     let result = branches.filter(branch => branch.name.toLowerCase() == value.toLowerCase());
@@ -103,7 +97,7 @@ export default function BranchManager() {
       setNotificationSeverity("error");
     });
   }
-  console.log(branches)
+
   return (
     <>
       <Title>Branch Manager</Title>

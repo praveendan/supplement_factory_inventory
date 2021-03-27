@@ -1,5 +1,5 @@
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useContext } from 'react';
 import './App.css';
 import firebase, { auth, provider } from './firebaseConfig'
 import Backdrop from '@material-ui/core/Backdrop';
@@ -16,6 +16,8 @@ import {
 
 import DashboardLayout from './layouts/dashboardLayout'
 import SignIn from './sign_in/SignIn'
+
+import { ReferenceDataContextProvider } from "./ReferenceDataContext"
 
 const useStyles = makeStyles((theme) => ({
   backdrop: {
@@ -62,7 +64,9 @@ export default function App() {
             <SignIn setUser={setUser}/>
           </Route>
           <PrivateRoute path='/dashboard' user={user}>
-            <DashboardLayout />
+            <ReferenceDataContextProvider>
+              <DashboardLayout />
+            </ReferenceDataContextProvider>
           </PrivateRoute>
           <PrivateRoute path='/' user={user}>
             <Redirect to='/dashboard' />

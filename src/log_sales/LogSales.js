@@ -1,4 +1,4 @@
-import React, {useState} from 'react';
+import React, {useState, useEffect, useContext} from 'react';
 import clsx from 'clsx';
 import { makeStyles } from '@material-ui/core/styles';
 import Grid from '@material-ui/core/Grid';
@@ -9,10 +9,16 @@ import Select from '@material-ui/core/Select';
 import InputLabel from '@material-ui/core/InputLabel';
 import FormControl from '@material-ui/core/FormControl';
 
+import { dbInstance } from './../firebaseConfig';
+
 import DatePicker from '../shared/Datepicker'
 import Title from './../shared/Title'
 import Orders from './OrdersTable';
 import ProductsDropDown from './../shared/ProductsDropdown'
+
+import { ReferenceDataContext } from "./../ReferenceDataContext"
+
+import Snackbar from './../shared/Notification'
 
 const useStyles = makeStyles((theme) => ({
   formRoot: {
@@ -51,6 +57,36 @@ export default function LogSales() {
   const [currentNumberOfItem, setCurrentNumberOfItem] = useState(0);
   const [currentReturnState, setCurrentReturnState] = useState(false);
   const [saleItems, setSaleItems] = useState([]);
+
+  const [productsObject, setProductsObject] = useState({});
+  const { branchesObject } = useContext(ReferenceDataContext);
+
+  const [notification, setNotification] = useState("");
+  const [notificationBarOpen, setNotificationBarOpen] = useState(false);
+  //error warning info success
+  const [notificationSeverity, setNotificationSeverity] = useState("error");
+
+  useEffect(() => {
+    const dbProductInstance = dbInstance.collection("products");
+
+    dbProductInstance.get()
+    .then((querySnapshot) => {
+      var productList = {};
+      querySnapshot.forEach((doc) => {
+        productList[doc.id] = {
+          name: doc.data().name,
+          category: doc.data().category
+        }
+      });
+      setProductsObject(productList);
+    })
+    .catch((error) => {
+      setNotification("Error retrieving product data. Please try again later.");
+      setNotificationBarOpen(true);
+      setNotificationSeverity("error");
+      console.log("Error getting documents:", error);
+    });
+  },[]);
 
   const addItemToList = () => {
     var tempArray = saleItems.slice();
@@ -105,13 +141,15 @@ export default function LogSales() {
                       name: 'branch',
                       id: 'branch-selector',
                     }}
+                    disabled={
+                      Object.keys(productsObject).length === 0 && 
+                      Object.keys(branchesObject).length === 0 
+                    }
                     value={currentBranch}
                     onChange={(e) => setCurrentBranch(e.target.value)}
                   >
                     <option aria-label="None" value="" />
-                    <option value={10}>Ten</option>
-                    <option value={20}>Twenty</option>
-                    <option value={30}>Thirty</option>
+                    {Object.keys(branchesObject).map((d, _key) => (<option key={d} value={d}>{branchesObject[d].name}</option>))}
                   </Select>
                 </FormControl>
               </Grid>
@@ -185,6 +223,7 @@ export default function LogSales() {
           </Paper>
         </Grid>        
       </Grid>
+      <Snackbar isOpen={notificationBarOpen} setOpen={setNotificationBarOpen} severity={notificationSeverity} message={notification}/>
     </>
   );
 }

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import clsx from 'clsx';
 import { makeStyles } from '@material-ui/core/styles';
 import Grid from '@material-ui/core/Grid';
@@ -14,6 +14,8 @@ import { dbInstance } from './../firebaseConfig';
 import Title from '../shared/Title'
 import StockListTable from './StockListTable';
 import Snackbar from './../shared/Notification'
+
+import { ReferenceDataContext } from "./../ReferenceDataContext"
 
 // Generate Order Data
 function createData(id, name, categoryName , numberOfItems) {
@@ -53,8 +55,8 @@ export default function LogSales() {
   const [stocks, setStocks] = useState([]);
 
   const [productsObject, setProductsObject] = useState({});
-  const [branchesObject, setBranchesObject] = useState({});
-  const [categoriesObject, setCategoriesObject] = useState({})
+  const { branchesObject } = useContext(ReferenceDataContext);
+  const { categoriesObject } = useContext(ReferenceDataContext);
   const [isLoading, setIsLoading] = useState(false);
 
   const [notification, setNotification] = useState("");
@@ -66,8 +68,6 @@ export default function LogSales() {
 
   useEffect(() => {
     const dbProductInstance = dbInstance.collection("products");
-    const dbCategoryInstance = dbInstance.collection("categories");
-    const dbBranchInstance = dbInstance.collection("branches");
     dbProductInstance.get()
     .then((querySnapshot) => {
       var productList = {};
@@ -83,44 +83,7 @@ export default function LogSales() {
       setNotification("Error retrieving product data. Please try again later.");
       setNotificationBarOpen(true);
       setNotificationSeverity("error");
-      console.log("Error getting document:", error);
-      setIsLoading(false);
-    });
-
-    dbCategoryInstance.get()
-    .then((querySnapshot) => {
-      var categoryList = {};
-      querySnapshot.forEach((doc) => {
-        categoryList[doc.id] = {
-          name: doc.data().name
-        }
-      });
-      setCategoriesObject(categoryList);
-    })
-    .catch((error) => {
-      setNotification("Error retrieving category data. Please try again later.");
-      setNotificationBarOpen(true);
-      setNotificationSeverity("error");
-      console.log("Error getting document:", error);
-      setIsLoading(false);
-    });
-
-    dbBranchInstance.get()
-    .then((querySnapshot) => {
-      var branchesList = {};
-      querySnapshot.forEach((doc) => {
-        branchesList[doc.id] = {
-          name: doc.data().name
-        }
-      });
-      setBranchesObject(branchesList);
-    })
-    .catch((error) => {
-      setNotification("Error retrieving branch data. Please try again later.");
-      setNotificationBarOpen(true);
-      setNotificationSeverity("error");
-      console.log("Error getting document:", error);
-      setIsLoading(false);
+      console.log("Error getting documents:", error);
     });
   },[])
 
@@ -130,7 +93,6 @@ export default function LogSales() {
       dbInventoryInstance.doc(currentStockBranch).get()
       .then((doc) => {
         if (doc.exists) {
-          console.log("Document data:", doc.data());
           var data = doc.data();
           var itemArray = [];
           Object.keys(data).map((d, _key) => {

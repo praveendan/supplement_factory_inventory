@@ -1,4 +1,4 @@
-import React,{useState, useEffect} from 'react';
+import React,{useState, useEffect,useContext} from 'react';
 import clsx from 'clsx';
 import { makeStyles } from '@material-ui/core/styles';
 import Grid from '@material-ui/core/Grid';
@@ -11,6 +11,8 @@ import { dbInstance } from './../firebaseConfig';
 import Title from '../shared/Title'
 import CategoryListTable from './CategoryListTable';
 import Snackbar from './../shared/Notification'
+
+import { ReferenceDataContext } from "./../ReferenceDataContext";
 
 // Generate Order Data
 function createData(id, name) {
@@ -47,7 +49,8 @@ export default function CategoryManager() {
 
   const [value, setValue] = React.useState('');
   const [categories, setCategories] = useState([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const { categoriesObject } = useContext(ReferenceDataContext);
+  const [isLoading, setIsLoading] = useState(false);
   const [notification, setNotification] = useState("");
   const [notificationBarOpen, setNotificationBarOpen] = useState(false);
   //error warning info success
@@ -56,21 +59,12 @@ export default function CategoryManager() {
   const fixedHeightPaper = clsx(classes.paper, classes.fixedHeight);
 
   useEffect(() => {
-    dbCollectionInstance.onSnapshot((snapshot) => {
-      var categoryList = [];
-      snapshot.forEach((doc) => {
-        categoryList.push(createData(doc.id, doc.data().name))
-      });
-      setCategories(categoryList);
-      setIsLoading(false)
-    }, (error) => {
-      setNotification("Error retrieving data.");
-      setNotificationBarOpen(true);
-      setNotificationSeverity("error");
-      console.error("Error retirving info: ", error);
-      setIsLoading(false)
+    var categoryList = [];
+    Object.keys(categoriesObject).map((d, key) => {
+      categoryList.push(createData(d, categoriesObject[d].name))
     });
-  },[])
+    setCategories(categoryList);
+  },[categoriesObject])
 
 
   const addCategory = () => {
