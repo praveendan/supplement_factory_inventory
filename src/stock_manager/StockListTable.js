@@ -14,7 +14,7 @@ const useStyles = makeStyles((theme) => ({
   },
 }));
 
-export default function StockListTable({ rowData, setStocks, isLoading }) {
+export default function StockListTable({ rowData, saveItemValue, setStocks, isLoading }) {
   const classes = useStyles();
   const columns= [
     { field: "id", flex: 1, headerName: "Id" },
@@ -25,7 +25,7 @@ export default function StockListTable({ rowData, setStocks, isLoading }) {
     ),},
     {
       field: "tempNumberUpdate", width: 200, headerName: 'Action', renderCell: (params) => (
-        <ActionCellRenderer stocks={rowData} setStocks={setStocks} rowIndex={params.rowIndex} />
+        <ActionCellRenderer stocks={rowData} saveItemValue={saveItemValue} setStocks={setStocks} rowIndex={params.rowIndex} />
       ),
     },
   ];
@@ -50,24 +50,24 @@ const ActionCellRenderer = (props) => {
 
   const setTempNumberUpdate = (e) => {
     let tempArray = props.stocks.slice();
-    setTempVal(e.target.value);
-    tempArray[props.rowIndex].tempNumberUpdate = parseInt(e.target.value);
+    setTempVal(isNaN(e.target.value)? 0 : e.target.value);
+    tempArray[props.rowIndex].tempNumberUpdate = parseInt(isNaN(e.target.value)? 0 : e.target.value);
     props.setStocks(tempArray);
   }
 
-  const saveUpdate = () => {
+  const saveUpdate = async () => {
     let tempArray = props.stocks.slice();
-    setTempVal(0);
-    tempArray[props.rowIndex].isUpdated = true;
-    tempArray[props.rowIndex].tempNumberUpdate = 0;
-    props.setStocks(tempArray);
-  }
 
-  const cancelUpdate = () => {
-    let tempArray = props.stocks.slice();
-    setTempVal(0);
-    tempArray[props.rowIndex].tempNumberUpdate = 0;
-    props.setStocks(tempArray);
+    const result = await props.saveItemValue(props.stocks[props.rowIndex].id, tempArray[props.rowIndex].numberOfItems + tempArray[props.rowIndex].tempNumberUpdate);
+    if (result === true) {
+      setTempVal(0);
+      tempArray[props.rowIndex].isUpdated = true;
+      tempArray[props.rowIndex].numberOfItems = tempArray[props.rowIndex].numberOfItems + tempArray[props.rowIndex].tempNumberUpdate;
+      tempArray[props.rowIndex].tempNumberUpdate = 0;
+
+      props.setStocks(tempArray);
+    }
+
   }
 
   return (
@@ -78,11 +78,6 @@ const ActionCellRenderer = (props) => {
       <Tooltip title="Save">
         <IconButton aria-label="save" onClick={saveUpdate}>
           <SaveIcon />
-        </IconButton>
-      </Tooltip>
-      <Tooltip title="Cancel">
-        <IconButton aria-label="cancel" onClick={cancelUpdate}>
-          <CancelPresentationIcon/>
         </IconButton>
       </Tooltip>
     </React.Fragment>

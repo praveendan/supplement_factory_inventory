@@ -116,6 +116,28 @@ export default function LogSales() {
     }
   },[currentStockBranch])
 
+  const saveItemValue = (productId, newValue) => {
+    if(currentStockBranch && currentStockBranch !== ""){
+      var updateObject = {};
+      updateObject[productId] = newValue;
+      return dbInventoryInstance.doc(currentStockBranch).update(updateObject)
+      .then(() => {
+        setNotification("Saved.");
+        setNotificationBarOpen(true);
+        setNotificationSeverity("success");
+        console.log("Document successfully updated!");
+        return true;
+      })
+      .catch((error) => {
+        setNotification("Error updating. Please try again later.");
+        setNotificationBarOpen(true);
+        setNotificationSeverity("error");
+        console.error("Error updating document: ", error);
+        return false;
+      });
+    }
+  };
+
   return (
     <>
       <Title>Stock Manager</Title>
@@ -151,7 +173,7 @@ export default function LogSales() {
         </Grid>
         <Grid item xs={12}>
           <Paper className={fixedHeightPaper}>
-            <StockListTable rowData={stocks} setStocks={setStocks} isLoading={isLoading}/>
+            <StockListTable rowData={stocks} saveItemValue={saveItemValue} setStocks={setStocks} isLoading={isLoading}/>
           </Paper>
         </Grid>
       </Grid>

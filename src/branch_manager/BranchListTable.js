@@ -13,7 +13,7 @@ export default function BranchListTable({ rowData, setBranches, isLoading, delet
     { field: 'name', flex: 2, headerName: 'Branch name' },
     {
       field: "", width: 100, headerName: 'Action', renderCell: (params) => (
-        <DeleteButton branches={rowData} setBranches={setBranches} rowIndex={params.rowIndex} deleteFunction={deleteFunction}/>
+        <DeleteButton branches={rowData} setBranches={setBranches} rowIndex={params.rowIndex} deleteFunction={deleteFunction} {...params}/>
       ),
     },
   ];
@@ -32,7 +32,7 @@ const DeleteButton = (props) => {
   const [currentItem, setCurrentItem] = useState(null)
 
   const showPrompt = (item) => {
-    setCurrentItem(item.branches[item.rowIndex]);
+    setCurrentItem(item.row);
     setOpen(true);
   }
 

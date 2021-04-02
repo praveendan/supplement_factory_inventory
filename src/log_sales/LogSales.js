@@ -9,7 +9,7 @@ import Select from '@material-ui/core/Select';
 import InputLabel from '@material-ui/core/InputLabel';
 import FormControl from '@material-ui/core/FormControl';
 
-import { dbInstance } from './../firebaseConfig';
+import { dbInstance, functions } from './../firebaseConfig';
 
 import DatePicker from '../shared/Datepicker'
 import Title from './../shared/Title'
@@ -60,11 +60,60 @@ export default function LogSales() {
 
   const [productsObject, setProductsObject] = useState({});
   const { branchesObject } = useContext(ReferenceDataContext);
+  const dbSalesInstance = dbInstance.collection("sales");
 
   const [notification, setNotification] = useState("");
   const [notificationBarOpen, setNotificationBarOpen] = useState(false);
   //error warning info success
   const [notificationSeverity, setNotificationSeverity] = useState("error");
+
+  const [inventoryUpdateSnapshot, setInventoryUpdateSnapshot] = useState({});
+
+  const [isAddbuttonDisabled, setIsAddButtonDisabled] = useState(true);
+  const [isSaveButtonDisabled, setIsSavebuttonDisabled] = useState(false);
+
+  const [isLoading, setIsLoading] = useState(false);
+
+  useEffect(() => {
+    if(currentDate && currentDate !== "" && currentBranch && currentBranch !== "") {
+      setIsLoading(true);
+      dbSalesInstance.doc(currentDate).get()
+      .then((doc) => {
+        if (doc.exists) {
+          var tempArray = [];
+          let dataObject = doc.data()[currentBranch];
+          if(dataObject){
+            Object.keys(dataObject).map((d, _key) => {
+              if(d !== "inventoryUpdateSnapshot"){
+                tempArray.push({
+                  id: d,
+                  saleDate: currentDate,
+                  saleBranch: currentBranch,
+                  saleItem: productsObject[d].name,
+                  saleNumberOfItems: dataObject[d],
+                  saleIsReturn: dataObject[d] < 0? true: false,
+                  itemCode: d
+                });
+              }            
+            });
+          }          
+          setSaleItems(tempArray);
+          setIsLoading(false);
+        } else {
+          setSaleItems([])
+          setIsLoading(false);
+        }
+        setIsAddButtonDisabled(false);
+      })
+      .catch((error) => {
+        console.log("Error retrieving data: ", error);
+        showNotificationMessage("error", "Error retrieving data. Please try again later.")
+        setSaleItems([]);
+        setIsLoading(false);
+        setIsAddButtonDisabled(false);
+      });
+    }
+  },[currentDate, currentBranch])
 
   useEffect(() => {
     const dbProductInstance = dbInstance.collection("products");
@@ -81,24 +130,28 @@ export default function LogSales() {
       setProductsObject(productList);
     })
     .catch((error) => {
-      setNotification("Error retrieving product data. Please try again later.");
-      setNotificationBarOpen(true);
-      setNotificationSeverity("error");
+      showNotificationMessage("error", "Error retrieving product data. Please try again later.")
       console.log("Error getting documents:", error);
     });
   },[]);
 
+  const showNotificationMessage = (severety, message) => {
+    setNotification(message);
+    setNotificationBarOpen(true);
+    setNotificationSeverity(severety);
+  }
+
   const addItemToList = () => {
     var tempArray = saleItems.slice();
     const found = tempArray.findIndex(element => element.itemCode == currentItem.itemCode);
-    console.log(found)
+    //to update the array
     if(-1 === found){ 
       tempArray.push({
-        id: Math.random(),
+        id: currentItem.itemCode,
         saleDate: currentDate,
         saleBranch: currentBranch,
         saleItem: currentItem.itemName,
-        saleNumberOfItems: currentNumberOfItem,
+        saleNumberOfItems: currentReturnState? -currentNumberOfItem: currentNumberOfItem,
         saleIsReturn: currentReturnState,
         itemCode: currentItem.itemCode
       });
@@ -107,9 +160,33 @@ export default function LogSales() {
         tempArray[found].saleNumberOfItems = tempArray[found].saleNumberOfItems - currentNumberOfItem;
       } else {
         tempArray[found].saleNumberOfItems = tempArray[found].saleNumberOfItems + currentNumberOfItem;
-      }           
+      }
+      if(tempArray[found].saleNumberOfItems === 0){
+        tempArray.splice(found, 1);
+      }          
     }
-    
+
+    //to update the inventory Object
+    let tempUpdateInventoryObject = {...inventoryUpdateSnapshot};
+    console.log(tempUpdateInventoryObject)
+    let itemsChange;
+    if(inventoryUpdateSnapshot[currentItem.itemCode]){     
+      if(currentReturnState) {
+        itemsChange = inventoryUpdateSnapshot[currentItem.itemCode] + currentNumberOfItem;
+      } else {
+        itemsChange = inventoryUpdateSnapshot[currentItem.itemCode] - currentNumberOfItem;
+      }
+    } else {
+      if(currentReturnState) {
+        itemsChange = currentNumberOfItem;
+      } else {
+        itemsChange = -currentNumberOfItem;
+      }
+    }
+
+    tempUpdateInventoryObject[currentItem.itemCode] = itemsChange;
+    console.log(tempUpdateInventoryObject)
+    setInventoryUpdateSnapshot(tempUpdateInventoryObject)
 
     setSaleItems(tempArray)
   }
@@ -121,6 +198,51 @@ export default function LogSales() {
       setCurrentNumberOfItem(0);
   }
 
+  const saveLog = () => {
+    setIsSavebuttonDisabled(true);
+    setIsAddButtonDisabled(true);
+    let saveLogObject = {};
+    saveLogObject.branch = currentBranch;
+    saveLogObject.date = currentDate;
+
+    let tempUpdateObject = {};
+    saleItems.forEach(element => {
+      tempUpdateObject[element.id] = element.saleNumberOfItems
+    });
+ 
+    saveLogObject.logSnapshot = tempUpdateObject;
+    saveLogObject.inventoryUpdateSnapshot = inventoryUpdateSnapshot;
+
+    var addLog = functions.httpsCallable('updateInventory');
+    addLog(saveLogObject)
+      .then((result) => {
+        // Read result of the Cloud Function.
+        console.log(result);
+        if(result.data.status === "SUCCESS"){
+          setIsSavebuttonDisabled(false);
+          setIsAddButtonDisabled(false);
+          showNotificationMessage("success", "Saved the log and updated inventory successfully.")
+        } else {
+          showNotificationMessage("error", result.data.message? result.data.message : "Error saving data.")
+        }
+        
+      })
+      .catch((error) => {
+        var code = error.code;
+        var message = error.message;
+        var details = error.details;
+        showNotificationMessage("error", `Error: ${message} Code: ${code}`)
+      });
+  }
+
+  const clearLog = () => {
+    dbSalesInstance.doc(currentDate).delete().then(() => {
+      console.log("Document successfully deleted!");
+    }).catch((error) => {
+        console.error("Error removing document: ", error);
+    });
+  }
+
   return (
     <>
       <Title>Log Sales</Title>
@@ -129,7 +251,12 @@ export default function LogSales() {
           <Paper className={classes.searchBar}>
             <Grid className={classes.formRoot} container spacing={3}>
               <Grid item xs={12} sm={6} lg={2}>
-                <DatePicker className={classes.shortInput} currentDate={currentDate} setcurrentDate={setcurrentDate}/>
+                <DatePicker className={classes.shortInput} currentDate={currentDate} 
+                disabled={
+                  Object.keys(productsObject).length === 0 && 
+                  Object.keys(branchesObject).length === 0 
+                }
+                setcurrentDate={setcurrentDate}/>
               </Grid>
               <Grid item xs={12} sm={6} lg={3}>
                 <FormControl className={classes.shortInput} variant="outlined" size="small">
@@ -155,6 +282,7 @@ export default function LogSales() {
               </Grid>
               <Grid item xs={12} sm={6} lg={3}>
                 <ProductsDropDown
+                  productsObject={productsObject}
                   id="combo-box-demo"
                   className={classes.shortInput}
                   size="small"
@@ -196,7 +324,7 @@ export default function LogSales() {
                 className={classes.shortInput} 
                 variant="contained" 
                 color="primary"
-                disabled={(currentDate == "" || currentBranch == "" || currentItem == null || currentNumberOfItem == 0)? true: false}
+                disabled={(currentDate == "" || currentBranch == "" || currentItem == null || currentNumberOfItem == 0 || isAddbuttonDisabled)? true: false}
                 onClick={addItemToList}
                 >
                   Add
@@ -207,14 +335,15 @@ export default function LogSales() {
         </Grid>   
         <Grid item xs={12}>
           <Paper className={fixedHeightPaper}>
-            <Orders saleItems={saleItems} setSaleItems={setSaleItems}/>
+            <Orders saleItems={saleItems} setSaleItems={setSaleItems} isLoading={isLoading}/>
             <div style={{display: 'grid', justifyContent:'flex-end'}}>
               <Button 
                 className={classes.shortInput} 
                 variant="contained" 
                 color="primary"
                 style={{width: '200px'}}
-                disabled={saleItems.length == 0}
+                disabled={saleItems.length == 0 || isSaveButtonDisabled}
+                onClick={saveLog}
                 >
                 Save
               </Button>
@@ -223,7 +352,7 @@ export default function LogSales() {
           </Paper>
         </Grid>        
       </Grid>
-      <Snackbar isOpen={notificationBarOpen} setOpen={setNotificationBarOpen} severity={notificationSeverity} message={notification}/>
+      <Snackbar isOpen={notificationBarOpen} setOpen={setNotificationBarOpen} severity={notificationSeverity} message={notification}/>  
     </>
   );
 }

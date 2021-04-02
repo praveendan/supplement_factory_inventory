@@ -16,6 +16,8 @@ export const auth = firebase.auth();
 auth.setPersistence(firebase.auth.Auth.Persistence.SESSION);
 
 export const dbInstance = firebase.firestore();
+// Initialize Cloud Functions through Firebase
+export const functions = firebase.functions();
 // db.settings({
 //   timestampsInSnapshots: true
 // });

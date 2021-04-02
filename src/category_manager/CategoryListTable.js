@@ -20,7 +20,7 @@ export default function CategoryListTable({rowData, setCategories, isLoading, de
     {field: "name", flex: 2, headerName: "Category name"},
     {
       field: "", width: 100, headerName: 'Action', renderCell: (params) => (
-        <ActionCellRenderer categories={rowData} setCategories={setCategories} rowIndex={params.rowIndex} />
+        <ActionCellRenderer categories={rowData} setCategories={setCategories} rowIndex={params.rowIndex} {...params} />
       ),
     },
   ];
@@ -40,7 +40,7 @@ const ActionCellRenderer = (props) => {
   const [currentItem, setCurrentItem] = useState("")
 
   const showPrompt = (item) => {
-    setCurrentItem(item.categories[item.rowIndex]);
+    setCurrentItem(item.row);
     setOpen(true);
   }
 

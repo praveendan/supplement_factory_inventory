@@ -5,22 +5,7 @@ import TextField from "@material-ui/core/TextField";
 import Autocomplete from "@material-ui/lab/Autocomplete";
 import CircularProgress from "@material-ui/core/CircularProgress";
 
-function sleep(delay = 0) {
-  return new Promise((resolve) => {
-    setTimeout(resolve, delay);
-  });
-}
-
-const products = {
-  prod1: {
-    name: "whey gold standard"
-  },
-  prod2: {
-    name: "Nitrotech"
-  }
-};
-
-export default function ProductsDropdown({setCurrentItem, ...props}) {
+export default function ProductsDropdown({setCurrentItem, productsObject, ...props}) {
   const [open, setOpen] = useState(false);
   const [options, setOptions] = useState([]);
   const loading = open && options.length === 0;
@@ -33,19 +18,13 @@ export default function ProductsDropdown({setCurrentItem, ...props}) {
     }
 
     (async () => {
-      // const response = await fetch(
-      //   "https://country.register.gov.uk/records.json?page-size=5000"
-      // );
-      await sleep(1e3); // For demo purposes.
-      //const countries = await response.json();
-
       if (active) {
         //setOptions(Object.keys(countries).map((key) => countries[key].item[0]));
         setOptions(
-          Object.keys(products).map((key) => {
+          Object.keys(productsObject).map((key) => {
             return {
               itemCode: key,
-              itemName: products[key].name
+              itemName: productsObject[key].name
             };
           })
         );

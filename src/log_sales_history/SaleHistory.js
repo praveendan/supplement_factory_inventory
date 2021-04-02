@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import clsx from 'clsx';
 import { makeStyles } from '@material-ui/core/styles';
 import Grid from '@material-ui/core/Grid';
@@ -11,27 +11,13 @@ import Title from '../shared/Title'
 import SaleHistoryListTable from './SaleHistoryTable';
 import DatePicker from '../shared/Datepicker'
 
+import { dbInstance } from './../firebaseConfig';
+import { ReferenceDataContext } from "./../ReferenceDataContext"
+import Snackbar from './../shared/Notification'
+
 // Generate Order Data
 function createData(id, name, numberOfItems) {
   return { id, name, numberOfItems };
-}
-
-const branch = {
-  ky: {
-    name: "Kandy"
-  },
-  pera: {
-    name: "Peradeniya"
-  }
-}
-
-const catMap = {
-  whey_protein: {
-    name: 'Whey protein'
-  },
-  creatine: {
-    name: 'Creatine'
-  },
 }
 
 const useStyles = makeStyles((theme) => ({
@@ -61,18 +47,74 @@ const useStyles = makeStyles((theme) => ({
 export default function SaleHistory() {
   const classes = useStyles();
   const [currentDate, setcurrentDate] = useState("");
-  const [currentSaleHistoryBranch, setCurrentSaleHistoryBranch] = React.useState('');
+  const [currentBranch, setCurrentBranch] = React.useState('');
+  const dbSalesInstance = dbInstance.collection("sales");
 
-  const [saleHistory, setSaleHistory] = useState([
-    createData(0, 'gold standard', 5),
-    createData(1, 'platrinum', 10),
-    createData(2, 'creatine mono', 2),
-  ]);
+  const [productsObject, setProductsObject] = useState({});
+  const { branchesObject } = useContext(ReferenceDataContext);
+
+  const [notification, setNotification] = useState("");
+  const [notificationBarOpen, setNotificationBarOpen] = useState(false);
+  //error warning info success
+  const [notificationSeverity, setNotificationSeverity] = useState("error");
+
+  const [saleHistory, setSaleHistory] = useState([]);
+  const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
-    console.log(currentSaleHistoryBranch);
-    console.log(currentDate)
-  },[currentDate,currentSaleHistoryBranch]);
+    const dbProductInstance = dbInstance.collection("products");
+
+    dbProductInstance.get()
+      .then((querySnapshot) => {
+        var productList = {};
+        querySnapshot.forEach((doc) => {
+          productList[doc.id] = {
+            name: doc.data().name,
+            category: doc.data().category
+          }
+        });
+        setProductsObject(productList);
+      })
+      .catch((error) => {
+        showNotificationMessage("error", "Error retrieving product data. Please try again later.")
+        console.log("Error getting documents:", error);
+      });
+  }, []);
+
+  useEffect(() => {
+    if (currentDate && currentDate !== "" && currentBranch && currentBranch !== "") {
+      setIsLoading(true);
+      dbSalesInstance.doc(currentDate).get()
+        .then((doc) => {
+          if (doc.exists) {
+            var tempArray = [];
+            let dataObject = doc.data()[currentBranch];
+            if (dataObject) {
+              Object.keys(dataObject).forEach((d) => {
+                tempArray.push(createData(d, productsObject[d].name, dataObject[d]))
+              });
+            }
+            setSaleHistory(tempArray);
+            setIsLoading(false);
+          } else {
+            setSaleHistory([]);
+            setIsLoading(false);
+          }
+        })
+        .catch((error) => {
+          console.log("Error retrieving data: ", error);
+          showNotificationMessage("error", "Error retrieving data. Please try again later.")
+          setSaleHistory([]);
+          setIsLoading(false);
+        });
+    }
+  }, [currentDate, currentBranch])
+
+  const showNotificationMessage = (severety, message) => {
+    setNotification(message);
+    setNotificationBarOpen(true);
+    setNotificationSeverity(severety);
+  }
 
   const fixedHeightPaper = clsx(classes.paper, classes.fixedHeight);
 
@@ -84,7 +126,12 @@ export default function SaleHistory() {
           <Paper className={classes.searchBar}>
             <Grid justify="flex-end" className={classes.formRoot} container spacing={3}>
               <Grid item xs={12} sm={6} lg={3}>
-                <DatePicker className={classes.shortInput} currentDate={currentDate} setcurrentDate={setcurrentDate}/>
+                <DatePicker className={classes.shortInput} currentDate={currentDate}
+                  disabled={
+                    Object.keys(productsObject).length === 0 &&
+                    Object.keys(branchesObject).length === 0
+                  }
+                  setcurrentDate={setcurrentDate} />
               </Grid>
               <Grid item xs={12} sm={6} lg={3}>
                 <FormControl className={classes.shortInput} variant="outlined" size="small">
@@ -96,11 +143,15 @@ export default function SaleHistory() {
                       name: 'branch',
                       id: 'branch-selector',
                     }}
-                    value={currentSaleHistoryBranch}
-                    onChange={(e) => setCurrentSaleHistoryBranch(e.target.value)}
+                    disabled={
+                      Object.keys(productsObject).length === 0 &&
+                      Object.keys(branchesObject).length === 0
+                    }
+                    value={currentBranch}
+                    onChange={(e) => setCurrentBranch(e.target.value)}
                   >
                     <option aria-label="None" value="" />
-                    {Object.keys(branch).map((d, key) => (<option key={d} value={d}>{branch[d].name}</option>))}
+                    {Object.keys(branchesObject).map((d, _key) => (<option key={d} value={d}>{branchesObject[d].name}</option>))}
                   </Select>
                 </FormControl>
               </Grid>
@@ -109,10 +160,11 @@ export default function SaleHistory() {
         </Grid>
         <Grid item xs={12}>
           <Paper className={fixedHeightPaper}>
-            <SaleHistoryListTable rowData={saleHistory} setSaleHistorys={setSaleHistory} />
+            <SaleHistoryListTable rowData={saleHistory} setSaleHistorys={setSaleHistory} isLoading={isLoading}/>
           </Paper>
         </Grid>
       </Grid>
+      <Snackbar isOpen={notificationBarOpen} setOpen={setNotificationBarOpen} severity={notificationSeverity} message={notification} />
     </>
   );
 }

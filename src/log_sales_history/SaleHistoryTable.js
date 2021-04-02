@@ -9,7 +9,7 @@ const useStyles = makeStyles((theme) => ({
   },
 }));
 
-export default function SaleHistoryListTable({ rowData, setStocks }) {
+export default function SaleHistoryListTable({ rowData, setStocks, isLoading }) {
   const classes = useStyles();
   const columns= [
     { field: "id", flex: 1, headerName: "Id" },
@@ -20,7 +20,7 @@ export default function SaleHistoryListTable({ rowData, setStocks }) {
   return (
     <div style={{ display: 'flex', height: 400, width: "100%" }}>
       <div style={{ flexGrow: 1 }}>
-        <DataGrid rows={rowData} columns={columns} pageSize={5} />
+        <DataGrid rows={rowData} columns={columns} pageSize={5} loading={isLoading}/>
       </div>
     </div>
   );
