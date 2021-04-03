@@ -11,7 +11,7 @@ export default function CategoryListTable({rowData, setCategories, isLoading, de
     {field: "name", flex: 2, headerName: "Category name"},
     {
       field: "", width: 100, headerName: 'Action', renderCell: (params) => (
-        <ActionCellRenderer categories={rowData} setCategories={setCategories} rowIndex={params.rowIndex} {...params} />
+        <ActionCellRenderer categories={rowData} setCategories={setCategories} rowIndex={params.rowIndex} deleteFunction={deleteFunction} {...params} />
       ),
     },
   ];
@@ -26,12 +26,11 @@ export default function CategoryListTable({rowData, setCategories, isLoading, de
 }
 
 const ActionCellRenderer = (props) => {
-
   const [open, setOpen] = useState(false);
   const [currentItem, setCurrentItem] = useState("")
 
   const showPrompt = (item) => {
-    setCurrentItem(item.row);
+    setCurrentItem(item);
     setOpen(true);
   }
 
@@ -41,7 +40,7 @@ const ActionCellRenderer = (props) => {
 
   return (
     <React.Fragment>
-      <IconButton aria-label="delete" onClick={() => showPrompt(props)}>
+      <IconButton aria-label="delete" onClick={() => showPrompt(props.row)}>
         <DeleteIcon />
       </IconButton>
       <ConfirmationDialog
