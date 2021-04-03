@@ -1,7 +1,7 @@
 
-import React, { useEffect, useState, useContext } from 'react';
+import React, { useEffect, useState } from 'react';
 import './App.css';
-import firebase, { auth, provider } from './firebaseConfig'
+import { auth } from './firebaseConfig'
 import Backdrop from '@material-ui/core/Backdrop';
 import CircularProgress from '@material-ui/core/CircularProgress';
 import { makeStyles } from '@material-ui/core/styles';
@@ -9,8 +9,6 @@ import {
   BrowserRouter as Router,
   Route,
   Redirect,
-  useLocation,
-  useHistory,
   Switch
 } from 'react-router-dom'
 

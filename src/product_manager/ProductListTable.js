@@ -1,20 +1,11 @@
-import React, { useState, useEffect } from 'react';
-import { makeStyles } from '@material-ui/core/styles';
+import React, { useState } from 'react';
 import IconButton from '@material-ui/core/IconButton';
 import DeleteIcon from '@material-ui/icons/Delete';
 import ConfirmationDialog from './../shared/ConfirmationDialog'
 
 import { DataGrid } from '@material-ui/data-grid';
 
-const useStyles = makeStyles((theme) => ({
-  seeMore: {
-    marginTop: theme.spacing(3),
-  },
-}));
-
 export default function ProductListTable({ rowData, isLoading, categoriesList, deleteFunction }) {
-  const classes = useStyles();
-
   const columns= [
    // { field: "id", flex: 1, headerName: "Id" },
     { field: "name", flex: 2, headerName: "Product name" },

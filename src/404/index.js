@@ -14,7 +14,6 @@ const useStyles = makeStyles((theme) => ({
     overflow: 'auto',
     flexDirection: 'column',
     textAlign: 'center',
-    display: 'flex',
     justifyContent: 'center'
   },
   fixedHeight: {

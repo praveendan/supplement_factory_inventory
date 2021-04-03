@@ -1,16 +1,7 @@
 import React from 'react';
-import { makeStyles } from '@material-ui/core/styles';
-
 import { DataGrid } from '@material-ui/data-grid';
 
-const useStyles = makeStyles((theme) => ({
-  seeMore: {
-    marginTop: theme.spacing(3),
-  },
-}));
-
 export default function SaleHistoryListTable({ rowData, setStocks, isLoading }) {
-  const classes = useStyles();
   const columns= [
     { field: "id", flex: 1, headerName: "Id" },
     { field: "name", flex: 2, headerName: "Name" },

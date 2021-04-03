@@ -217,7 +217,6 @@ export default function LogSales() {
     addLog(saveLogObject)
       .then((result) => {
         // Read result of the Cloud Function.
-        console.log(result);
         if(result.data.status === "SUCCESS"){
           setIsSavebuttonDisabled(false);
           setIsAddButtonDisabled(false);
@@ -230,18 +229,17 @@ export default function LogSales() {
       .catch((error) => {
         var code = error.code;
         var message = error.message;
-        var details = error.details;
         showNotificationMessage("error", `Error: ${message} Code: ${code}`)
       });
   }
 
-  const clearLog = () => {
-    dbSalesInstance.doc(currentDate).delete().then(() => {
-      console.log("Document successfully deleted!");
-    }).catch((error) => {
-        console.error("Error removing document: ", error);
-    });
-  }
+  // const clearLog = () => {
+  //   dbSalesInstance.doc(currentDate).delete().then(() => {
+  //     console.log("Document successfully deleted!");
+  //   }).catch((error) => {
+  //       console.error("Error removing document: ", error);
+  //   });
+  // }
 
   return (
     <>

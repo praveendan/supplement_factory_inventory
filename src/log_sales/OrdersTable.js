@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import IconButton from '@material-ui/core/IconButton';
 import DeleteIcon from '@material-ui/icons/Delete';
 
@@ -30,7 +30,6 @@ export default function OrdersTable({ saleItems, setSaleItems, isLoading, ...pro
 
 const ActionCellRenderer = (props) => {
   const removeItem = (e, id) => {
-    console.log(id)
     e.preventDefault();
     var tempArray = props.saleItems.slice();
 

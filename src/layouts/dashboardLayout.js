@@ -2,9 +2,7 @@
 import React from 'react';
 
 import Box from '@material-ui/core/Box';
-import Link from '@material-ui/core/Link';
 import Container from '@material-ui/core/Container';
-import Typography from '@material-ui/core/Typography';
 import { makeStyles } from '@material-ui/core/styles';
 import CssBaseline from '@material-ui/core/CssBaseline';
 
