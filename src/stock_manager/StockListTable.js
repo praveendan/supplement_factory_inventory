@@ -1,21 +1,10 @@
-import React, { useState, useEffect } from 'react';
-import { makeStyles } from '@material-ui/core/styles';
-import IconButton from '@material-ui/core/IconButton';
-import SaveIcon from '@material-ui/icons/Save';
-import CancelPresentationIcon from '@material-ui/icons/CancelPresentation';
+import React from 'react';
 import TextField from '@material-ui/core/TextField';
 import Tooltip from '@material-ui/core/Tooltip';
 
 import { DataGrid } from '@material-ui/data-grid';
 
-const useStyles = makeStyles((theme) => ({
-  seeMore: {
-    marginTop: theme.spacing(3),
-  },
-}));
-
-export default function StockListTable({ rowData, saveItemValue, setStocks, isLoading }) {
-  const classes = useStyles();
+export default function StockListTable({ rowData, setStocks, isLoading }) {
   const columns= [
     { field: "id", flex: 1, headerName: "Id" },
     { field: "name", flex: 2, headerName: "Name" },
@@ -24,8 +13,8 @@ export default function StockListTable({ rowData, saveItemValue, setStocks, isLo
       <StockNumberMapper {...params}/>
     ),},
     {
-      field: "tempNumberUpdate", width: 200, headerName: 'Action', renderCell: (params) => (
-        <ActionCellRenderer stocks={rowData} saveItemValue={saveItemValue} setStocks={setStocks} rowIndex={params.rowIndex} />
+      field: "tempNumberUpdate", width: 200, headerName: 'Number of itemss', renderCell: (params) => (
+        <ActionCellRenderer stocks={rowData} setStocks={setStocks} rowIndex={params.rowIndex} {...params}/>
       ),
     },
   ];
@@ -46,40 +35,43 @@ const StockNumberMapper = (props) => {
 }
 
 const ActionCellRenderer = (props) => {
-  const [tempVal, setTempVal] = useState(0)
-
   const setTempNumberUpdate = (e) => {
     let tempArray = props.stocks.slice();
-    setTempVal(isNaN(e.target.value)? 0 : e.target.value);
-    tempArray[props.rowIndex].tempNumberUpdate = parseInt(isNaN(e.target.value)? 0 : e.target.value);
-    props.setStocks(tempArray);
-  }
 
-  const saveUpdate = async () => {
-    let tempArray = props.stocks.slice();
+    let itemIndex = tempArray.findIndex(element => element.id === props.row.id);
 
-    const result = await props.saveItemValue(props.stocks[props.rowIndex].id, tempArray[props.rowIndex].numberOfItems + tempArray[props.rowIndex].tempNumberUpdate);
-    if (result === true) {
-      setTempVal(0);
-      tempArray[props.rowIndex].isUpdated = true;
-      tempArray[props.rowIndex].numberOfItems = tempArray[props.rowIndex].numberOfItems + tempArray[props.rowIndex].tempNumberUpdate;
-      tempArray[props.rowIndex].tempNumberUpdate = 0;
-
+    if(itemIndex !== -1){
+      //checking if not a number. if it is a number, check for empty and then store the val
+      tempArray[itemIndex].tempNumberUpdate = isNaN(e.target.value)? 0 : e.target.value === ""? 0 : parseInt(e.target.value);
       props.setStocks(tempArray);
-    }
-
+    }    
   }
+
+  // const saveUpdate = async () => {
+  //   let tempArray = props.stocks.slice();
+
+  //   const result = await props.saveItemValue(props.stocks[props.rowIndex].id, tempArray[props.rowIndex].numberOfItems + tempArray[props.rowIndex].tempNumberUpdate);
+  //   if (result === true) {
+  //     setTempVal(0);
+  //     tempArray[props.rowIndex].isUpdated = true;
+  //     tempArray[props.rowIndex].numberOfItems = tempArray[props.rowIndex].numberOfItems + tempArray[props.rowIndex].tempNumberUpdate;
+  //     tempArray[props.rowIndex].tempNumberUpdate = 0;
+
+  //     props.setStocks(tempArray);
+  //   }
+
+  // }
 
   return (
     <React.Fragment>
       <Tooltip title="Enter the number of stock change">
-        <TextField type="number" variant="outlined" size="small" value={tempVal} onChange={setTempNumberUpdate}/>
+        <TextField type="number" variant="outlined" size="small" value={props.row.tempNumberUpdate} onChange={setTempNumberUpdate}/>
       </Tooltip>
-      <Tooltip title="Save">
+      {/* <Tooltip title="Save">
         <IconButton aria-label="save" onClick={saveUpdate}>
           <SaveIcon />
         </IconButton>
-      </Tooltip>
+      </Tooltip> */}
     </React.Fragment>
   )
 }

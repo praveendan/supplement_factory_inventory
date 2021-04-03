@@ -4,7 +4,6 @@ import { makeStyles } from '@material-ui/core/styles';
 import Grid from '@material-ui/core/Grid';
 import Paper from '@material-ui/core/Paper';
 import Button from '@material-ui/core/Button';
-import TextField from '@material-ui/core/TextField';
 import Select from '@material-ui/core/Select';
 import InputLabel from '@material-ui/core/InputLabel';
 import FormControl from '@material-ui/core/FormControl';
@@ -53,6 +52,7 @@ export default function LogSales() {
 
   const [currentStockBranch, setCurrentStockBranch] = useState('');
   const [stocks, setStocks] = useState([]);
+  const [currentStocks, setCurrentStocks] = useState({});
 
   const [productsObject, setProductsObject] = useState({});
   const { branchesObject } = useContext(ReferenceDataContext);
@@ -63,6 +63,8 @@ export default function LogSales() {
   const [notificationBarOpen, setNotificationBarOpen] = useState(false);
   //error warning info success
   const [notificationSeverity, setNotificationSeverity] = useState("error");
+
+  const [isSaveButtonDisabled, setIsSaveButtonDisabled] = useState(false);
 
   const fixedHeightPaper = clsx(classes.paper, classes.fixedHeight);
 
@@ -80,63 +82,90 @@ export default function LogSales() {
       setProductsObject(productList);
     })
     .catch((error) => {
-      setNotification("Error retrieving product data. Please try again later.");
-      setNotificationBarOpen(true);
-      setNotificationSeverity("error");
+      showNotificationMessage("error", "Error retrieving product data. Please try again later.");
       console.log("Error getting documents:", error);
     });
   },[])
 
   useEffect(() => {
-    if(currentStockBranch && currentStockBranch !== "") {
+    if(currentStockBranch && 
+      currentStockBranch !== "" && 
+      0 < Object.keys(productsObject).length &&
+      0 < Object.keys(categoriesObject).length) {
       setIsLoading(true);
       dbInventoryInstance.doc(currentStockBranch).get()
       .then((doc) => {
         if (doc.exists) {
           var data = doc.data();
+          setCurrentStocks(data);
           var itemArray = [];
-          Object.keys(data).map((d, _key) => {
+          Object.keys(data).forEach(d => 
             itemArray.push(createData(d, productsObject[d].name, categoriesObject[productsObject[d].category].name, data[d]))
-          });
+          );
           setStocks(itemArray);
         } else {
-          setNotification("Error loading data. If you have just created the branch, Please try again later.");
-          setNotificationBarOpen(true);
-          setNotificationSeverity("error");
+          showNotificationMessage("error", "Error loading data. If you have just created the branch, Please try again later.");
           console.log("No such document!");
         }
         setIsLoading(false);
       }).catch((error) => {
-        setNotification("Error retrieving data. Please try again later.");
-        setNotificationBarOpen(true);
-        setNotificationSeverity("error");
+        showNotificationMessage("error", "Error retrieving data. Please try again later.");
         console.log("Error getting document:", error);
         setIsLoading(false);
       });
     }
-  },[currentStockBranch])
+  },[currentStockBranch]);
 
-  const saveItemValue = (productId, newValue) => {
+  const showNotificationMessage = (severety, message) => {
+    setNotification(message);
+    setNotificationBarOpen(true);
+    setNotificationSeverity(severety);
+  }
+
+  // const saveItemValue = (productId, newValue) => {
+  //   if(currentStockBranch && currentStockBranch !== ""){
+  //     var updateObject = {};
+  //     updateObject[productId] = newValue;
+  //     return dbInventoryInstance.doc(currentStockBranch).update(updateObject)
+  //     .then(() => {
+  //       showNotificationMessage("success", "Saved successfully.");
+  //       console.log("Document successfully updated!");
+  //       return true;
+  //     })
+  //     .catch((error) => {
+  //       showNotificationMessage("error", "Error updating. Please try again later.");
+  //       console.error("Error updating document: ", error);
+  //       return false;
+  //     });
+  //   }
+  // };
+
+  const savelog = () => {
     if(currentStockBranch && currentStockBranch !== ""){
-      var updateObject = {};
-      updateObject[productId] = newValue;
-      return dbInventoryInstance.doc(currentStockBranch).update(updateObject)
+      //currentStocks
+      setIsSaveButtonDisabled(true);
+      let stocksUpdate = { ...currentStocks };
+      stocks.forEach(element => {
+        if(stocksUpdate[element.id]){
+          stocksUpdate[element.id] += element.tempNumberUpdate;
+        } else {
+          stocksUpdate[element.id] = element.tempNumberUpdate;
+        }       
+      });
+
+      dbInventoryInstance.doc(currentStockBranch).update(stocksUpdate)
       .then(() => {
-        setNotification("Saved.");
-        setNotificationBarOpen(true);
-        setNotificationSeverity("success");
+        showNotificationMessage("success", "Saved successfully.");
         console.log("Document successfully updated!");
-        return true;
+        setIsSaveButtonDisabled(false);
       })
       .catch((error) => {
-        setNotification("Error updating. Please try again later.");
-        setNotificationBarOpen(true);
-        setNotificationSeverity("error");
+        showNotificationMessage("error", "Error updating. Please try again later.");
         console.error("Error updating document: ", error);
-        return false;
+        setIsSaveButtonDisabled(false);
       });
     }
-  };
+  }
 
   return (
     <>
@@ -173,7 +202,19 @@ export default function LogSales() {
         </Grid>
         <Grid item xs={12}>
           <Paper className={fixedHeightPaper}>
-            <StockListTable rowData={stocks} saveItemValue={saveItemValue} setStocks={setStocks} isLoading={isLoading}/>
+            <StockListTable rowData={stocks} setStocks={setStocks} isLoading={isLoading}/>
+            <div style={{display: 'grid', justifyContent:'flex-end'}}>
+              <Button 
+                className={classes.shortInput} 
+                variant="contained" 
+                color="primary"
+                style={{width: '200px'}}
+                disabled={stocks.length === 0 || isSaveButtonDisabled}
+                onClick={savelog}
+                >
+                Save
+              </Button>
+            </div>
           </Paper>
         </Grid>
       </Grid>
