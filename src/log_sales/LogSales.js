@@ -308,7 +308,7 @@ export default function LogSales() {
                       id: 'return-selector',
                     }}
                     value={currentReturnState}
-                    onChange={(e) => setCurrentReturnState(e.target.value == 'true'? true: false)}
+                    onChange={(e) => setCurrentReturnState(e.target.value === 'true'? true: false)}
                   >
                     <option value={false}>No</option>
                     <option value={true}>Yes</option>
@@ -320,7 +320,7 @@ export default function LogSales() {
                 className={classes.shortInput} 
                 variant="contained" 
                 color="primary"
-                disabled={(currentDate == "" || currentBranch == "" || currentItem == null || currentNumberOfItem == 0 || isAddbuttonDisabled)? true: false}
+                disabled={(currentDate === "" || currentBranch === "" || currentItem === null || currentNumberOfItem === 0 || isAddbuttonDisabled)? true: false}
                 onClick={addItemToList}
                 >
                   Add
@@ -338,7 +338,7 @@ export default function LogSales() {
                 variant="contained" 
                 color="primary"
                 style={{width: '200px'}}
-                disabled={saleItems.length == 0 || isSaveButtonDisabled}
+                disabled={saleItems.length === 0 || isSaveButtonDisabled}
                 onClick={saveLog}
                 >
                 Save

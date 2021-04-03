@@ -109,7 +109,7 @@ export default function BranchManager() {
                 <TextField className={classes.shortInput} id="branch-name" onChange={(e) => setValue(e.target.value)} label="Branch name" variant="outlined" size="small" />
               </Grid>
               <Grid item xs={12} sm={6} lg={3}>
-                <Button className={classes.shortInput} onClick={addBranch} disabled={!value || value == ""? true: false} variant="contained" color="primary">
+                <Button className={classes.shortInput} onClick={addBranch} disabled={!value || value === ""? true: false} variant="contained" color="primary">
                   Add
                 </Button>
               </Grid>

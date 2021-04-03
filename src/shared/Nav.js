@@ -154,7 +154,7 @@ export default function Nav() {
         <Divider />
         <MainListItems/>
         <Divider />
-        <List>{secondaryListItems}</List>
+        {/* <List>{secondaryListItems}</List> */}
       </Drawer>
     </>
   );
