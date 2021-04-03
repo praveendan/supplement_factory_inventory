@@ -108,7 +108,7 @@ export default function Nav() {
 
   const logout = () => {
     auth.signOut().then(() => {
-      window.location.replace('http://localhost:3000/login');
+      window.location.replace('https://sf-inventory.web.app/login');
     }).catch((error) => {
       // An error happened.
     });
