@@ -83,7 +83,7 @@ export default function LogSales() {
           var tempArray = [];
           let dataObject = doc.data()[currentBranch];
           if(dataObject){
-            Object.keys(dataObject).map((d, _key) => {
+            Object.keys(dataObject).forEach(d => {
               if(d !== "inventoryUpdateSnapshot"){
                 tempArray.push({
                   id: d,
@@ -143,7 +143,7 @@ export default function LogSales() {
 
   const addItemToList = () => {
     var tempArray = saleItems.slice();
-    const found = tempArray.findIndex(element => element.itemCode == currentItem.itemCode);
+    const found = tempArray.findIndex(element => element.itemCode === currentItem.itemCode);
     //to update the array
     if(-1 === found){ 
       tempArray.push({
@@ -168,7 +168,6 @@ export default function LogSales() {
 
     //to update the inventory Object
     let tempUpdateInventoryObject = {...inventoryUpdateSnapshot};
-    console.log(tempUpdateInventoryObject)
     let itemsChange;
     if(inventoryUpdateSnapshot[currentItem.itemCode]){     
       if(currentReturnState) {
@@ -185,14 +184,13 @@ export default function LogSales() {
     }
 
     tempUpdateInventoryObject[currentItem.itemCode] = itemsChange;
-    console.log(tempUpdateInventoryObject)
     setInventoryUpdateSnapshot(tempUpdateInventoryObject)
 
     setSaleItems(tempArray)
   }
   
   const setNumberOfItems = (e) => {
-    if(e.target.value && e.target.value != "")
+    if(e.target.value && e.target.value !== "")
       setCurrentNumberOfItem(parseInt(e.target.value));
     else 
       setCurrentNumberOfItem(0);

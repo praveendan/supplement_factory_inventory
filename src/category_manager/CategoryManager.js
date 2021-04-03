@@ -50,7 +50,7 @@ export default function CategoryManager() {
   const [value, setValue] = React.useState('');
   const [categories, setCategories] = useState([]);
   const { categoriesObject } = useContext(ReferenceDataContext);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading] = useState(false);
   const [notification, setNotification] = useState("");
   const [notificationBarOpen, setNotificationBarOpen] = useState(false);
   //error warning info success
@@ -60,16 +60,14 @@ export default function CategoryManager() {
 
   useEffect(() => {
     var categoryList = [];
-    Object.keys(categoriesObject).map((d, key) => {
-      categoryList.push(createData(d, categoriesObject[d].name))
-    });
+    Object.keys(categoriesObject).forEach(d => categoryList.push(createData(d, categoriesObject[d].name)));
     setCategories(categoryList);
   },[categoriesObject])
 
 
   const addCategory = () => {
-    let result = categories.filter(category => category.name.toLowerCase() == value.toLowerCase());
-    if(result.length == 0) {
+    let result = categories.filter(category => category.name.toLowerCase().trim() === value.toLowerCase().trim());
+    if(result.length === 0) {
       dbCollectionInstance.add({
         name: value,
       })
@@ -109,7 +107,7 @@ export default function CategoryManager() {
                 <TextField className={classes.shortInput} id="category-name" onChange={(e) => setValue(e.target.value)} label="Category name" variant="outlined" size="small" />
               </Grid>
               <Grid item xs={12} sm={6} lg={3}>
-                <Button className={classes.shortInput} onClick={addCategory} disabled={!value || value == ""? true: false} variant="contained" color="primary">
+                <Button className={classes.shortInput} onClick={addCategory} disabled={!value || value === ""? true: false} variant="contained" color="primary">
                   Add
                 </Button>
               </Grid>

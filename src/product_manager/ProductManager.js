@@ -79,8 +79,8 @@ export default function LogSales() {
   },[])
 
   const addProduct = () => {
-    let result = products.filter(product => product.name.toLowerCase() == currentProductName.toLowerCase());
-    if(result.length == 0) {
+    let result = products.filter(product => product.name.toLowerCase().trim() === currentProductName.toLowerCase().trim());
+    if(result.length === 0) {
       dbCollectionInstance.add({
         name: currentProductName,
         category: currentProductCat
@@ -139,7 +139,7 @@ export default function LogSales() {
                 </FormControl>
               </Grid>
               <Grid item xs={12} sm={3} lg={1}>
-                <Button className={classes.shortInput} onClick={addProduct} disabled={!currentProductCat || currentProductCat == "" || !currentProductName || currentProductName == ""? true : false} variant="contained" color="primary">
+                <Button className={classes.shortInput} onClick={addProduct} disabled={!currentProductCat || currentProductCat === "" || !currentProductName || currentProductName === ""? true : false} variant="contained" color="primary">
                   Add
                 </Button>
               </Grid>

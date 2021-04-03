@@ -9,13 +9,6 @@ import Typography from '@material-ui/core/Typography';
 
 export default function ConfirmationDialog(props) {
   const { onClose, onConfirm, value: valueProp, open, label, ...other } = props;
-  const [value, setValue] = React.useState(valueProp);
-
-  React.useEffect(() => {
-    if (!open) {
-      setValue(valueProp);
-    }
-  }, [valueProp, open]);
 
   const handleEntering = () => {
   };

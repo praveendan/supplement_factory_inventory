@@ -50,7 +50,7 @@ export default function BranchManager() {
   const [value, setValue] = React.useState('');
   const [branches, setBranches] = useState([]);
   const { branchesObject } = useContext(ReferenceDataContext);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading] = useState(false);
   const [notification, setNotification] = useState("");
   const [notificationBarOpen, setNotificationBarOpen] = useState(false);
   //error warning info success
@@ -60,15 +60,15 @@ export default function BranchManager() {
 
   useEffect(() => {
     var branchList = [];
-    Object.keys(branchesObject).map((d, key) => {
+    Object.keys(branchesObject).forEach(d => 
       branchList.push(createData(d, branchesObject[d].name, branchesObject[d].isInventorySet))
-    });
+    );
     setBranches(branchList);
   },[branchesObject])
 
   const addBranch = () => {
-    let result = branches.filter(branch => branch.name.toLowerCase() == value.toLowerCase());
-    if(result.length == 0) {
+    let result = branches.filter(branch => branch.name.toLowerCase().trim() === value.toLowerCase().trim());
+    if(result.length === 0) {
       dbCollectionInstance.add({
         name: value,
         isInventorySet: false,
