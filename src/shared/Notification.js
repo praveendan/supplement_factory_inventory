@@ -18,7 +18,7 @@ const useStyles = makeStyles((theme) => ({
 
 export default function CustomizedSnackbars({isOpen, setOpen, severity, message}) {
   const classes = useStyles();
-
+  //severity: error warning info success
   const handleClose = (event, reason) => {
     if (reason === 'clickaway') {
       return;

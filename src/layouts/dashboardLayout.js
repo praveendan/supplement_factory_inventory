@@ -47,7 +47,7 @@ export default function DashaboardLayout() {
           <div className={classes.appBarSpacer} />
           <Container maxWidth="lg" className={classes.container}>
             <Switch>
-              <Route path="/dashboard"  exact component={Dashboard} />
+              {/* <Route path="/dashboard"  exact component={Dashboard} /> */}
               <Route path="/dashboard/sales/log-sale"  exact component={LogSales} />
               <Route path="/dashboard/sales/sale-history" exact component={SaleHistory}/>
               <Route path="/dashboard/manage-branches"  exact component={BranchManager} />

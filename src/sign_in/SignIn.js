@@ -14,6 +14,8 @@ import { makeStyles } from '@material-ui/core/styles';
 import Container from '@material-ui/core/Container';
 import { auth } from './../firebaseConfig'
 
+import Snackbar from './../shared/Notification'
+
 import {
   Redirect,
   useLocation,
@@ -43,6 +45,8 @@ const useStyles = makeStyles((theme) => ({
 
 function SignInComponent({authenticationFunction}) {
   const classes = useStyles();
+  const [userName, setUsername] = useState("");
+  const [password, setPassword] = useState("");
 
   return (
     <Container component="main" maxWidth="xs">
@@ -65,6 +69,8 @@ function SignInComponent({authenticationFunction}) {
             name="email"
             autoComplete="email"
             autoFocus
+            value={userName}
+            onChange={(e) => setUsername(e.target.value)}
           />
           <TextField
             variant="outlined"
@@ -76,22 +82,24 @@ function SignInComponent({authenticationFunction}) {
             type="password"
             id="password"
             autoComplete="current-password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
           />
-          <FormControlLabel
+          {/* <FormControlLabel
             control={<Checkbox value="remember" color="primary" />}
             label="Remember me"
-          />
+          /> */}
           <Button
             type="submit"
             fullWidth
             variant="contained"
             color="primary"
             className={classes.submit}
-            onClick={(e) => {e.preventDefault(); authenticationFunction();}}
+            onClick={(e) => {e.preventDefault(); authenticationFunction(userName, password);}}
           >
             Sign In
           </Button>
-          <Grid container>
+          {/* <Grid container>
             <Grid item xs>
               <Link href="#" variant="body2">
                 Forgot password?
@@ -102,7 +110,7 @@ function SignInComponent({authenticationFunction}) {
                 {"Don't have an account? Sign Up"}
               </Link>
             </Grid>
-          </Grid>
+          </Grid> */}
         </form>
       </div>
       <Box mt={8}>
@@ -116,29 +124,43 @@ export default function SignIn({setUser}) {
   const [
     redirectToReferrer,
     setRedirectToReferrer
-  ] = useState(false)
+  ] = useState(false);
+  const [notification, setNotification] = useState("");
+  const [notificationSeverity, setNotificationSeverity] = useState("error");
+  const [notificationBarOpen, setNotificationBarOpen] = useState(false);
 
   const { state } = useLocation()
 
-  const login = () => {
-    auth.signInWithEmailAndPassword("supplementfactoryky@gmail.com", '123456')
+  const showNotificationMessage = (severety, message) => {
+    setNotification(message);
+    setNotificationBarOpen(true);
+    setNotificationSeverity(severety);
+  }
+
+  const authenticationFunction = (userName, password) => {
+  //  auth.signInWithEmailAndPassword("supplementfactoryky@gmail.com", '123456')
+    auth.signInWithEmailAndPassword(userName, password)
     .then((userCredential) => {
-      // Signed in
+      console.log(userCredential)
       setUser(userCredential.user);
       setRedirectToReferrer(true);
-      // ...
     })
     .catch((error) => {
-      var errorCode = error.code;
       var errorMessage = error.message;
+      showNotificationMessage("error", errorMessage)
+      console.log(error)
     });
   }
 
   if (redirectToReferrer === true) {
-    return <Redirect to={state?.from || '/dashboard'} />
+    return <Redirect to={state?.from || '/dashboard/sales/log-sale'} />
   }
 
   return (
-    <SignInComponent authenticationFunction={login}/>
+    <>
+      <SignInComponent authenticationFunction={authenticationFunction} />
+      <Snackbar isOpen={notificationBarOpen} setOpen={setNotificationBarOpen} severity={notificationSeverity} message={notification}/>  
+    </>
+
   )
 }

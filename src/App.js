@@ -67,7 +67,7 @@ export default function App() {
             </ReferenceDataContextProvider>
           </PrivateRoute>
           <PrivateRoute path='/' user={user}>
-            <Redirect to='/dashboard' />
+            <Redirect to='/dashboard/sales/log-sale' />
           </PrivateRoute>
           </Switch>
         </div>

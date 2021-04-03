@@ -13,7 +13,7 @@ var firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 export const provider = new firebase.auth.EmailAuthProvider();
 export const auth = firebase.auth();
-auth.setPersistence(firebase.auth.Auth.Persistence.SESSION);
+//auth.setPersistence(firebase.auth.Auth.Persistence.SESSION);
 
 export const dbInstance = firebase.firestore();
 // Initialize Cloud Functions through Firebase

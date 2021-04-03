@@ -4,8 +4,8 @@ export default function Copyright() {
   return (
     <Typography variant="body2" color="textSecondary" align="center">
       {'Copyright © '}
-      <Link color="inherit" href="https://material-ui.com/">
-        Your Website
+      <Link color="inherit" href="https://www.supplementfactory.lk/">
+        Supplement Factory
     </Link>{' '}
       {new Date().getFullYear()}
       {'.'}
