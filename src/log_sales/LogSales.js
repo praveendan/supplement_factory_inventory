@@ -211,7 +211,7 @@ export default function LogSales() {
     saveLogObject.logSnapshot = tempUpdateObject;
     saveLogObject.inventoryUpdateSnapshot = inventoryUpdateSnapshot;
 
-    var addLog = functions.httpsCallable('updateInventory');
+    var addLog = functions.httpsCallable('updateSaleLog');
     addLog(saveLogObject)
       .then((result) => {
         // Read result of the Cloud Function.

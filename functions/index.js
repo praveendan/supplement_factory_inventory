@@ -50,7 +50,7 @@ exports.updateInventoryOnCreateProduct = functions.firestore
       inventorySnapshot.forEach((doc) => {
         promises.push(doc.ref.update(inventoryContent));
       });
-      return Promise.all(promises)
+      return Promise.all(promises);
     })
     .catch((error) => {
       console.log("Error setting the inventory on create product: ", error);
@@ -79,8 +79,9 @@ exports.updateInventoryOnDeleteProduct = functions.firestore
     });
   });
 
-// Saves a message to the Firebase Realtime Database but sanitizes the text by removing swearwords.
-exports.updateInventory = functions.https.onCall((data, context) => {
+// Saves the sale log
+exports.updateSaleLog = functions.https.onCall((data, context) => {
+  if (!context.auth) return {status: 'error', code: 401, message: 'Not signed in'}
   let branch = data.branch;
   let inventoryUpdateSnapshot = data.inventoryUpdateSnapshot;
   let date = data.date;
@@ -139,3 +140,86 @@ exports.updateInventory = functions.https.onCall((data, context) => {
     };
   });  
 });
+
+exports.updateInventory = functions.https.onCall(async (data, context) => {
+  if (!context.auth) return {status: 'error', code: 401, message: 'Not signed in'}
+  let branch = data.branch;
+  let stocksUpdateObject = data.stocksUpdateObject;
+  let inventoryUpdateSnapshot = data.inventoryUpdateSnapshot;
+  const promises = [];
+
+  const inventoryUpdateSnapshotCollection = admin.firestore().collection("inventory_update_snapshots");
+  const inventoryCollection = admin.firestore().collection("inventory");
+
+  promises.push(inventoryUpdateSnapshotCollection
+  .where("date", "==", inventoryUpdateSnapshot.date)
+  .where("branch", "==", branch)
+  .limit(1)
+  .get()
+  .then((querySnapshot) => {
+    if (!querySnapshot.empty) {
+      const snapShotId = querySnapshot.docs[0].id;
+      return inventoryUpdateSnapshotCollection.doc(snapShotId).set(inventoryUpdateSnapshot)
+      .then(() => {
+        console.log(`${branch}-${inventoryUpdateSnapshot.date} written`);
+        return { 
+          status: "SUCCESS",
+          message: "Inventory log updated successfully" 
+        };
+      })
+      .catch((error) => {
+        console.error(`${branch}-${inventoryUpdateSnapshot.date} not written`, error);
+        return { 
+          status: "FAILURE",
+          message: "Error updating log"
+        };
+      });
+    } else {
+      return inventoryUpdateSnapshotCollection.add(inventoryUpdateSnapshot)
+      .then(() => {
+        console.log(`${branch}-${inventoryUpdateSnapshot.date} added`);
+        return { 
+          status: "SUCCESS",
+          message: "Inventory log added successfully" 
+        };
+      })
+      .catch((error) => {
+        console.error(`${branch}-${inventoryUpdateSnapshot.date} not added`, error);
+        return { 
+          status: "FAILURE",
+          message: "Error adding log"
+        };
+      });
+    }
+  })
+  .catch((error) => {
+    console.log("Error getting documents: ", error);
+    return { 
+      status: "FAILURE",
+      message: "Error getting log"
+    };
+  }));
+
+  promises.push(inventoryCollection.doc(branch).set(stocksUpdateObject)
+  .then(() => {
+    console.log(`${branch}-${inventoryUpdateSnapshot.date} branch update written`);
+    return { 
+      status: "SUCCESS",
+      message: "Inventory updated successfully" 
+    };
+  })
+  .catch((error) => {
+    console.error(`${branch}-${inventoryUpdateSnapshot.date} branch update not written`, error);
+    return { 
+      status: "FAILURE",
+      message: "Error writing inventory"
+    };
+  }));
+
+  const [inventoryUpdateLogStatus, inventoryUpdateStatus] = await Promise.all(promises);
+  return {
+    status: "SUCCESS",
+    messages: [inventoryUpdateLogStatus.message, inventoryUpdateStatus.message]
+  }
+});
+

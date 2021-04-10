@@ -1,77 +1,196 @@
-import React from 'react';
+import React, { useState } from 'react';
 import TextField from '@material-ui/core/TextField';
 import Tooltip from '@material-ui/core/Tooltip';
-
+import IconButton from '@material-ui/core/IconButton';
+import NoteAddIcon from '@material-ui/icons/NoteAdd';
 import { DataGrid } from '@material-ui/data-grid';
 
-export default function StockListTable({ rowData, setStocks, isLoading }) {
-  const columns= [
-    { field: "id", flex: 1, headerName: "Id" },
-    { field: "name", flex: 2, headerName: "Name" },
-    { field: "categoryName", flex: 2, headerName: "Category" },
-    { field:"numberOfItems", flex: 2, headerName: "Stock", renderCell: (params) => (
-      <StockNumberMapper {...params}/>
-    ),},
+import Button from '@material-ui/core/Button';
+import Dialog from '@material-ui/core/Dialog';
+import DialogActions from '@material-ui/core/DialogActions';
+import DialogContent from '@material-ui/core/DialogContent';
+import DialogContentText from '@material-ui/core/DialogContentText';
+import DialogTitle from '@material-ui/core/DialogTitle';
+import FormControl from '@material-ui/core/FormControl';
+import Select from '@material-ui/core/Select';
+import MenuItem from '@material-ui/core/MenuItem';
+import InputLabel from '@material-ui/core/InputLabel';
+
+export default function StockListTable({ stocks, setStocks, isLoading }) {
+  const [open, setOpen] = useState(false);
+  const [currentItem, setCurrentItem] = useState(null);
+
+  const handleClickOpen = (currentItem) => {
+    setCurrentItem(currentItem);
+    setOpen(true);
+  };
+
+  const columns = [
+    { field: "name", flex: 1, headerName: "Name" },
+    { field: "categoryName", flex: 1, headerName: "Category" },
+    { field: "note", flex: 2, headerName: "Note", renderCell: (params) => (
+      <p>{params.value.text && params.value.text !== ""? params.value.text : "-"}</p>
+    )},
     {
-      field: "tempNumberUpdate", width: 200, headerName: 'Number of itemss', renderCell: (params) => (
-        <ActionCellRenderer stocks={rowData} setStocks={setStocks} rowIndex={params.rowIndex} {...params}/>
+      field: "numberOfItems", width: 170, headerName: "Stock", renderCell: (params) => (
+        <StockNumberMapper {...params} />
+      ),
+    },
+    {
+      field: "tempNumberUpdate", width: 160, headerName: 'Number of items', renderCell: (params) => (
+        <NumberUpdateCellRenderer stocks={stocks} setStocks={setStocks} rowIndex={params.rowIndex} {...params} />
+      ),
+    },
+    {
+      field: "id", width: 75, headerName: 'Action', disableColumnMenu: true, renderCell: (params) => (
+        <ActionCellRenderer handleClickOpen={handleClickOpen} {...params} />
       ),
     },
   ];
 
   return (
-    <div style={{ display: 'flex', height: 400, width: "100%" }}>
-      <div style={{ flexGrow: 1 }}>
-        <DataGrid rows={rowData} columns={columns} pageSize={5} loading={isLoading}/>
+    <>
+      <div style={{ display: 'flex', height: 400, width: "100%" }}>
+        <div style={{ flexGrow: 1 }}>
+          <DataGrid rows={stocks} columns={columns} pageSize={5} loading={isLoading} />
+        </div>
       </div>
-    </div>
+      <SetNoteModal open={open} setOpen={setOpen} currentItem={currentItem} setCurrentItem={setCurrentItem} stocks={stocks} setStocks={setStocks} />
+    </>
   );
 }
 
 const StockNumberMapper = (props) => {
-  return props.row.tempNumberUpdate !== 0 ? 
-  `${props.value + props.row.tempNumberUpdate} items (before: ${props.value}) ${props.row.isUpdated === true ? "Updated just now":""}` 
-  : `${props.value} ${props.row.isUpdated === true ? "Updated just now":""}` 
+  return props.row.tempNumberUpdate !== 0 ?
+    `${props.value + props.row.tempNumberUpdate} items (before: ${props.value}) ${props.row.isUpdated === true ? "Updated just now" : ""}`
+    : `${props.value} ${props.row.isUpdated === true ? "Updated just now" : ""}`
 }
 
-const ActionCellRenderer = (props) => {
+const NumberUpdateCellRenderer = (props) => {
   const setTempNumberUpdate = (e) => {
     let tempArray = props.stocks.slice();
 
     let itemIndex = tempArray.findIndex(element => element.id === props.row.id);
 
-    if(itemIndex !== -1){
+    if (itemIndex !== -1) {
       //checking if not a number. if it is a number, check for empty and then store the val
-      tempArray[itemIndex].tempNumberUpdate = isNaN(e.target.value)? 0 : e.target.value === ""? 0 : parseInt(e.target.value);
+      tempArray[itemIndex].tempNumberUpdate = isNaN(e.target.value) ? 0 : e.target.value === "" ? 0 : parseInt(e.target.value);
       props.setStocks(tempArray);
-    }    
+    }
   }
-
-  // const saveUpdate = async () => {
-  //   let tempArray = props.stocks.slice();
-
-  //   const result = await props.saveItemValue(props.stocks[props.rowIndex].id, tempArray[props.rowIndex].numberOfItems + tempArray[props.rowIndex].tempNumberUpdate);
-  //   if (result === true) {
-  //     setTempVal(0);
-  //     tempArray[props.rowIndex].isUpdated = true;
-  //     tempArray[props.rowIndex].numberOfItems = tempArray[props.rowIndex].numberOfItems + tempArray[props.rowIndex].tempNumberUpdate;
-  //     tempArray[props.rowIndex].tempNumberUpdate = 0;
-
-  //     props.setStocks(tempArray);
-  //   }
-
-  // }
 
   return (
     <React.Fragment>
       <Tooltip title="Enter the number of stock change">
-        <TextField type="number" variant="outlined" size="small" value={props.row.tempNumberUpdate} onChange={setTempNumberUpdate}/>
+        <TextField type="number" variant="outlined" size="small" value={props.row.tempNumberUpdate} onChange={setTempNumberUpdate} />
       </Tooltip>
-      {/* <Tooltip title="Save">
-        <IconButton aria-label="save" onClick={saveUpdate}>
-          <SaveIcon />
-        </IconButton>
-      </Tooltip> */}
     </React.Fragment>
+  )
+}
+
+const ActionCellRenderer = (props) => {
+  return (
+    <IconButton aria-label="delete" onClick={() => props.handleClickOpen(props.row.id)}>
+      <NoteAddIcon />
+    </IconButton>
+  )
+}
+
+const SetNoteModal = ({ open, setOpen, currentItem, setCurrentItem, stocks, setStocks }) => {
+  const [note, setNote] = useState({
+    is_predefined: false,
+    text: ""
+  });
+  const [itemIndex, setItemIndex] = useState(-1);
+
+  React.useEffect(() => {
+    let tempArray = stocks.slice();
+    let itemIndex = tempArray.findIndex(element => element.id === currentItem);
+    setItemIndex(itemIndex);
+    if (itemIndex !== -1) {
+      setNote(tempArray[itemIndex].note);
+    }
+
+  }, [currentItem])
+
+  const handleClose = () => {
+    setCurrentItem(null);
+    setOpen(false);
+  };
+
+  const handleChange = (event) => {
+    if (event.target.value === "custom") {
+      setNote({
+        is_predefined: false,
+        text: ""
+      });
+    } else {
+      setNote({
+        is_predefined: true,
+        text: event.target.value
+      });
+    }
+  }
+
+  const handleTextChange = (event) => {
+    setNote({
+      is_predefined: false,
+      text: event.target.value
+    });
+  }
+
+  const setNoteForItem = () => {
+    let tempArray = stocks.slice();
+    
+    if (itemIndex !== -1) {
+      //checking if not a number. if it is a number, check for empty and then store the val
+      tempArray[itemIndex].note = note;
+      setStocks(tempArray);
+    }
+    handleClose();
+  }
+
+  return (
+    <Dialog open={open} onClose={handleClose} aria-labelledby="form-dialog-title">
+      <DialogTitle id="form-dialog-title">Subscribe</DialogTitle>
+      <DialogContent>
+        <DialogContentText>
+          Select a predefined note or add a custom note
+        </DialogContentText>
+        <FormControl variant="outlined" fullWidth>
+          <InputLabel id="demo-simple-select-outlined-label">Note</InputLabel>
+          <Select
+            labelId="demo-simple-select-outlined-label"
+            id="demo-simple-select-outlined"
+            value={note.is_predefined === true ? note.text : "custom"}
+            onChange={handleChange}
+            label="Note"
+          >
+            <MenuItem value="custom">Custom</MenuItem>
+            <MenuItem value="Sent back to Colombo">Sent back to Colombo</MenuItem>
+          </Select>
+        </FormControl>
+        {
+          note.is_predefined === false &&
+          <TextField
+            autoFocus
+            margin="dense"
+            id="name"
+            label="Your custom note"
+            value={note.is_predefined === false ? note.text : ""}
+            onChange={handleTextChange}
+            fullWidth
+          />
+        }
+      </DialogContent>
+      <DialogActions>
+        <Button onClick={handleClose} color="primary">
+          Cancel
+        </Button>
+        <Button onClick={setNoteForItem} color="primary">
+          Save
+        </Button>
+      </DialogActions>
+    </Dialog>
   )
 }

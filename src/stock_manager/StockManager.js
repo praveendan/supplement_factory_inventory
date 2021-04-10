@@ -8,17 +8,21 @@ import Select from '@material-ui/core/Select';
 import InputLabel from '@material-ui/core/InputLabel';
 import FormControl from '@material-ui/core/FormControl';
 
-import { dbInstance } from './../firebaseConfig';
+import { dbInstance, functions } from './../firebaseConfig';
 
-import Title from '../shared/Title'
+import Title from '../shared/Title';
 import StockListTable from './StockListTable';
-import Snackbar from './../shared/Notification'
+import Snackbar from './../shared/Notification';
+import DatePicker from '../shared/Datepicker'
 
 import { ReferenceDataContext } from "./../ReferenceDataContext"
 
 // Generate Order Data
-function createData(id, name, categoryName , numberOfItems) {
-  return { id, name, categoryName, numberOfItems, tempNumberUpdate: 0, isUpdated: false };
+function createData(id, name, categoryName , numberOfItems, tempNumberUpdate=0, note={
+  is_predefined: false,
+  text: ""
+}) {
+  return { id, name, categoryName, numberOfItems, tempNumberUpdate, isUpdated: false, note };
 }
 
 const useStyles = makeStyles((theme) => ({
@@ -49,10 +53,13 @@ export default function LogSales() {
   const classes = useStyles();
 
   const dbInventoryInstance =  dbInstance.collection("inventory");
+  const dbInventoryUpdateInstance =  dbInstance.collection("inventory_update_snapshots");
 
   const [currentStockBranch, setCurrentStockBranch] = useState('');
+  const [currentDate, setcurrentDate] = useState("");
+
+  //stocks array for the table
   const [stocks, setStocks] = useState([]);
-  const [currentStocks, setCurrentStocks] = useState({});
 
   const [productsObject, setProductsObject] = useState({});
   const { branchesObject } = useContext(ReferenceDataContext);
@@ -88,20 +95,43 @@ export default function LogSales() {
   },[])
 
   useEffect(() => {
-    if(currentStockBranch && 
+    if(currentDate &&
+      currentDate !== "" &&
+      currentStockBranch && 
       currentStockBranch !== "" && 
       0 < Object.keys(productsObject).length &&
       0 < Object.keys(categoriesObject).length) {
       setIsLoading(true);
       dbInventoryInstance.doc(currentStockBranch).get()
-      .then((doc) => {
+      .then(async (doc) => {
         if (doc.exists) {
           var data = doc.data();
-          setCurrentStocks(data);
+          var updateInformationOftheBranchDate = {};
+          await dbInventoryUpdateInstance.where("date", "==", currentDate).where("branch", "==", currentStockBranch)
+          .limit(1)
+          .get()
+          .then((querySnapshot) => {
+            if (!querySnapshot.empty) {
+              console.log(querySnapshot.docs[0].id);
+              updateInformationOftheBranchDate = querySnapshot.docs[0].data().save_snapshot;
+            }
+          })
+          .catch((error) => {
+              console.log("Error getting documents: ", error);
+          });
+
           var itemArray = [];
-          Object.keys(data).forEach(d => 
-            itemArray.push(createData(d, productsObject[d].name, categoriesObject[productsObject[d].category].name, data[d]))
-          );
+          Object.keys(data).forEach(d => {
+            let stockBeforeUpdate = (updateInformationOftheBranchDate[d] && updateInformationOftheBranchDate[d].amount)? data[d] -= updateInformationOftheBranchDate[d].amount : data[d];
+            itemArray.push(
+              createData(d, 
+                productsObject[d].name, 
+                categoriesObject[productsObject[d].category].name, 
+                stockBeforeUpdate, 
+                updateInformationOftheBranchDate[d] && updateInformationOftheBranchDate[d].amount? updateInformationOftheBranchDate[d].amount: 0,
+                updateInformationOftheBranchDate[d]? updateInformationOftheBranchDate[d].note : { is_predefined: false,text: "" }
+                ))
+          });
           setStocks(itemArray);
         } else {
           showNotificationMessage("error", "Error loading data. If you have just created the branch, Please try again later.");
@@ -114,7 +144,7 @@ export default function LogSales() {
         setIsLoading(false);
       });
     }
-  },[currentStockBranch]);
+  },[currentStockBranch, currentDate]);
 
   const showNotificationMessage = (severety, message) => {
     setNotification(message);
@@ -122,47 +152,48 @@ export default function LogSales() {
     setNotificationSeverity(severety);
   }
 
-  // const saveItemValue = (productId, newValue) => {
-  //   if(currentStockBranch && currentStockBranch !== ""){
-  //     var updateObject = {};
-  //     updateObject[productId] = newValue;
-  //     return dbInventoryInstance.doc(currentStockBranch).update(updateObject)
-  //     .then(() => {
-  //       showNotificationMessage("success", "Saved successfully.");
-  //       console.log("Document successfully updated!");
-  //       return true;
-  //     })
-  //     .catch((error) => {
-  //       showNotificationMessage("error", "Error updating. Please try again later.");
-  //       console.error("Error updating document: ", error);
-  //       return false;
-  //     });
-  //   }
-  // };
-
   const savelog = () => {
-    if(currentStockBranch && currentStockBranch !== ""){
-      //currentStocks
+    if(currentStockBranch && currentStockBranch !== "" &&
+    currentDate && currentDate !== ""){
       setIsSaveButtonDisabled(true);
-      let stocksUpdate = { ...currentStocks };
+      let stocksUpdateObject = {};
+      let updateSnapshot = {};
       stocks.forEach(element => {
-        if(stocksUpdate[element.id]){
-          stocksUpdate[element.id] += element.tempNumberUpdate;
-        } else {
-          stocksUpdate[element.id] = element.tempNumberUpdate;
-        }       
+        updateSnapshot[element.id] = {
+          amount: element.tempNumberUpdate,
+          note: element.note
+        };
+        stocksUpdateObject[element.id] = element.numberOfItems + element.tempNumberUpdate;   
       });
 
-      dbInventoryInstance.doc(currentStockBranch).update(stocksUpdate)
-      .then(() => {
-        showNotificationMessage("success", "Saved successfully.");
-        console.log("Document successfully updated!");
-        setIsSaveButtonDisabled(false);
+      let inventoryUpdateSnapshot = {
+        branch: currentStockBranch,
+        date: currentDate,
+        save_snapshot:updateSnapshot
+      };
+
+      let data = {
+        branch : currentStockBranch,
+        stocksUpdateObject,
+        inventoryUpdateSnapshot
+      }
+
+      var addLog = functions.httpsCallable('updateInventory');
+      addLog(data)
+      .then((result) => {
+        // Read result of the Cloud Function.
+        if(result.data.status === "SUCCESS"){
+          setIsSaveButtonDisabled(false);
+          showNotificationMessage("success", "Saved the log and updated inventory successfully.")
+        } else {
+          showNotificationMessage("error", result.data.message? result.data.message : "Error saving data.")
+        }
+        
       })
       .catch((error) => {
-        showNotificationMessage("error", "Error updating. Please try again later.");
-        console.error("Error updating document: ", error);
-        setIsSaveButtonDisabled(false);
+        var code = error.code;
+        var message = error.message;
+        showNotificationMessage("error", `Error: ${message} Code: ${code}`)
       });
     }
   }
@@ -174,6 +205,15 @@ export default function LogSales() {
         <Grid item xs={12}>
           <Paper className={classes.searchBar}>
             <Grid justify="flex-end" className={classes.formRoot} container spacing={3}>
+            <Grid item xs={12} sm={6} lg={3}>
+                <DatePicker className={classes.shortInput} currentDate={currentDate}
+                  disabled={
+                    Object.keys(productsObject).length === 0 && 
+                    Object.keys(branchesObject).length === 0 && 
+                    Object.keys(categoriesObject).length === 0
+                  }
+                  setcurrentDate={setcurrentDate} />
+              </Grid>
               <Grid item xs={12} sm={6} lg={3}>
                 <FormControl className={classes.shortInput} variant="outlined" size="small">
                   <InputLabel htmlFor="category-selector">Branch</InputLabel>
@@ -202,7 +242,7 @@ export default function LogSales() {
         </Grid>
         <Grid item xs={12}>
           <Paper className={fixedHeightPaper}>
-            <StockListTable rowData={stocks} setStocks={setStocks} isLoading={isLoading}/>
+            <StockListTable stocks={stocks} setStocks={setStocks} isLoading={isLoading}/>
             <div style={{display: 'grid', justifyContent:'flex-end'}}>
               <Button 
                 className={classes.shortInput} 
