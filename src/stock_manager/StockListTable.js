@@ -28,9 +28,11 @@ export default function StockListTable({ stocks, setStocks, isLoading }) {
   const columns = [
     { field: "name", flex: 1, headerName: "Name" },
     { field: "categoryName", flex: 1, headerName: "Category" },
-    { field: "note", flex: 2, headerName: "Note", renderCell: (params) => (
-      <p>{params.value.text && params.value.text !== ""? params.value.text : "-"}</p>
-    )},
+    { field: "note", flex: 2, headerName: "Note",
+      valueGetter: getNoteText,
+      sortComparator: (v1, v2, cellParams1, cellParams2) =>
+      getNoteText(cellParams1).localeCompare(getNoteText(cellParams2))
+    },
     {
       field: "numberOfItems", width: 170, headerName: "Stock", renderCell: (params) => (
         <StockNumberMapper {...params} />
@@ -58,6 +60,10 @@ export default function StockListTable({ stocks, setStocks, isLoading }) {
       <SetNoteModal open={open} setOpen={setOpen} currentItem={currentItem} setCurrentItem={setCurrentItem} stocks={stocks} setStocks={setStocks} />
     </>
   );
+}
+
+function getNoteText(params) {
+  return `${params.row.note.text|| '-'}`
 }
 
 const StockNumberMapper = (props) => {
