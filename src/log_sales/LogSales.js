@@ -89,7 +89,7 @@ export default function LogSales() {
                   id: d,
                   saleDate: currentDate,
                   saleBranch: currentBranch,
-                  saleItem: productsObject[d].name,
+                  saleItem: productsObject[d]? productsObject[d].name: "Not available",
                   saleNumberOfItems: dataObject[d],
                   saleIsReturn: dataObject[d] < 0? true: false,
                   itemCode: d

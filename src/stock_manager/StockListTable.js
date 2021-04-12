@@ -158,7 +158,7 @@ const SetNoteModal = ({ open, setOpen, currentItem, setCurrentItem, stocks, setS
 
   return (
     <Dialog open={open} onClose={handleClose} aria-labelledby="form-dialog-title">
-      <DialogTitle id="form-dialog-title">Subscribe</DialogTitle>
+      <DialogTitle id="form-dialog-title">Add Note</DialogTitle>
       <DialogContent>
         <DialogContentText>
           Select a predefined note or add a custom note

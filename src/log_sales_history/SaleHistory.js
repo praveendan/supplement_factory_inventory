@@ -91,7 +91,7 @@ export default function SaleHistory() {
             let dataObject = doc.data()[currentBranch];
             if (dataObject) {
               Object.keys(dataObject).forEach((d) => {
-                tempArray.push(createData(d, productsObject[d].name, dataObject[d]))
+                tempArray.push(createData(d, productsObject[d]? productsObject[d].name: "Not available", dataObject[d]))
               });
             }
             setSaleHistory(tempArray);
