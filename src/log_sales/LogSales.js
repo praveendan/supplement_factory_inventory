@@ -35,6 +35,7 @@ const useStyles = makeStyles((theme) => ({
   },
   paper: {
     padding: theme.spacing(2),
+    paddingBottom: theme.spacing(0),
     display: 'flex',
     overflow: 'auto',
     flexDirection: 'column',
@@ -71,6 +72,7 @@ export default function LogSales() {
 
   const [isAddbuttonDisabled, setIsAddButtonDisabled] = useState(true);
   const [isSaveButtonDisabled, setIsSavebuttonDisabled] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
 
   const [isLoading, setIsLoading] = useState(false);
 
@@ -197,6 +199,7 @@ export default function LogSales() {
   }
 
   const saveLog = () => {
+    setIsSaving(true);
     setIsSavebuttonDisabled(true);
     setIsAddButtonDisabled(true);
     let saveLogObject = {};
@@ -216,6 +219,7 @@ export default function LogSales() {
       .then((result) => {
         // Read result of the Cloud Function.
         if(result.data.status === "SUCCESS"){
+          setIsSaving(false);
           setIsSavebuttonDisabled(false);
           setIsAddButtonDisabled(false);
           showNotificationMessage("success", "Saved the log and updated inventory successfully.")
@@ -227,6 +231,7 @@ export default function LogSales() {
       .catch((error) => {
         var code = error.code;
         var message = error.message;
+        setIsSaving(false);
         showNotificationMessage("error", `Error: ${message} Code: ${code}`)
       });
   }
@@ -332,7 +337,7 @@ export default function LogSales() {
         <Grid item xs={12}>
           <Paper className={fixedHeightPaper}>
             <Orders saleItems={saleItems} setSaleItems={setSaleItems} isLoading={isLoading}/>
-            <div style={{display: 'grid', justifyContent:'flex-end'}}>
+            <div style={{display: 'flex', justifyContent:'flex-end', alignItems:'center', flexGrow: 1}}>
               <Button 
                 className={classes.shortInput} 
                 variant="contained" 
@@ -341,7 +346,7 @@ export default function LogSales() {
                 disabled={saleItems.length === 0 || isSaveButtonDisabled}
                 onClick={saveLog}
                 >
-                Save
+                {isSaving? "Saving...": "Save"}
               </Button>
             </div>
             

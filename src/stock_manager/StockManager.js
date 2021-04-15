@@ -37,6 +37,7 @@ const useStyles = makeStyles((theme) => ({
   },
   paper: {
     padding: theme.spacing(2),
+    paddingBottom: theme.spacing(0),
     display: 'flex',
     overflow: 'auto',
     flexDirection: 'column',
@@ -72,6 +73,7 @@ export default function LogSales() {
   const [notificationSeverity, setNotificationSeverity] = useState("error");
 
   const [isSaveButtonDisabled, setIsSaveButtonDisabled] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
 
   const fixedHeightPaper = clsx(classes.paper, classes.fixedHeight);
 
@@ -161,6 +163,7 @@ export default function LogSales() {
   const savelog = () => {
     if(currentStockBranch && currentStockBranch !== "" &&
     currentDate && currentDate !== ""){
+      setIsSaving(true);
       setIsSaveButtonDisabled(true);
       let stocksUpdateObject = {};
       let updateSnapshot = {};
@@ -190,6 +193,7 @@ export default function LogSales() {
         // Read result of the Cloud Function.
         if(result.data.status === "SUCCESS"){
           setIsSaveButtonDisabled(false);
+          setIsSaving(false);
           showNotificationMessage("success", "Saved the log and updated inventory successfully.")
         } else {
           showNotificationMessage("error", result.data.message? result.data.message : "Error saving data.")
@@ -199,6 +203,7 @@ export default function LogSales() {
       .catch((error) => {
         var code = error.code;
         var message = error.message;
+        setIsSaving(false);
         showNotificationMessage("error", `Error: ${message} Code: ${code}`)
       });
     }
@@ -249,7 +254,7 @@ export default function LogSales() {
         <Grid item xs={12}>
           <Paper className={fixedHeightPaper}>
             <StockListTable stocks={stocks} setStocks={setStocks} isLoading={isLoading}/>
-            <div style={{display: 'grid', justifyContent:'flex-end'}}>
+            <div style={{display: 'flex', justifyContent:'flex-end', alignItems:'center', flexGrow: 1}}>
               <Button 
                 className={classes.shortInput} 
                 variant="contained" 
@@ -258,7 +263,7 @@ export default function LogSales() {
                 disabled={stocks.length === 0 || isSaveButtonDisabled}
                 onClick={savelog}
                 >
-                Save
+                {isSaving? "Saving...": "Save"}
               </Button>
             </div>
           </Paper>
