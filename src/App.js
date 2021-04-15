@@ -43,14 +43,15 @@ export default function App() {
   //   } 
   // });
 
-  useEffect(() => {
-    auth.onAuthStateChanged((user) => {
+   // Listen to the Firebase Auth state and set the local state.
+   useEffect(() => {
+    const unregisterAuthObserver = auth.onAuthStateChanged((user) => {
       if (user) {
         setUser(user);
       }
       setIsLoading(false);
     });
-    
+    return () => unregisterAuthObserver(); // Make sure we un-register Firebase observers when the component unmounts.
   },[])
 
   return (
