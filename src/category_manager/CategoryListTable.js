@@ -46,7 +46,7 @@ const ActionCellRenderer = (props) => {
       <ConfirmationDialog
         id="delete-category-confirmation"
         keepMounted
-        label={currentItem && currentItem.name? currentItem.name :""}
+        label={currentItem && currentItem.name? `delete ${currentItem.name}? this can't be undone` :""}
         open={open}
         onConfirm={()=>removeItem()}
         onClose={()=>setOpen(false)}

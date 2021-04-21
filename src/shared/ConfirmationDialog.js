@@ -31,9 +31,9 @@ export default function ConfirmationDialog(props) {
       open={open}
       {...other}
     >
-      <DialogTitle id="confirmation-dialog-title">Delete {label? label: ""}?</DialogTitle>
+      <DialogTitle id="confirmation-dialog-title">Confirm?</DialogTitle>
       <DialogContent dividers>
-        <Typography>Are you sure that you want to delete {label? label.toLowerCase(): ""}? this can't be undone</Typography>
+        <Typography>Are you sure that you want to {label? label.toLowerCase(): ""}</Typography>
       </DialogContent>
       <DialogActions>
         <Button autoFocus onClick={handleCancel} color="primary">
