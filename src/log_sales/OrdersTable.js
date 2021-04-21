@@ -4,7 +4,7 @@ import DeleteIcon from '@material-ui/icons/Delete';
 
 import { DataGrid } from '@material-ui/data-grid';
 
-export default function OrdersTable({ saleItems, setSaleItems, isLoading, ...props }) {
+export default function OrdersTable({ saleItems, setSaleItems, isLoading, isEditable, ...props }) {
   const columns = [
     {field: "saleItem", flex: 2, headerName: "Item" },
     {field: "saleNumberOfItems", flex: 1, headerName: "Change in number of items", renderCell: (params) => (
@@ -15,7 +15,7 @@ export default function OrdersTable({ saleItems, setSaleItems, isLoading, ...pro
     )},
     {
       field: "id", width: 100, headerName: 'Action', renderCell: (params) => (
-        <ActionCellRenderer saleItems={saleItems} setSaleItems={setSaleItems} rowIndex={params.rowIndex} {...params}/>
+        <ActionCellRenderer saleItems={saleItems} setSaleItems={setSaleItems} rowIndex={params.rowIndex} isEditableButton={isEditable} {...params}/>
       ),
     },
   ];
@@ -40,8 +40,14 @@ const ActionCellRenderer = (props) => {
   }
 
   return (
-    <IconButton aria-label="delete" onClick={(e) => removeItem(e, props.row.id)}>
-      <DeleteIcon />
-    </IconButton>
+    props.isEditableButton? (
+      <IconButton aria-label="delete" onClick={(e) => removeItem(e, props.row.id)}>
+        <DeleteIcon />
+      </IconButton>
+    ):(
+      <IconButton aria-label="delete" disabled>
+        <DeleteIcon />
+      </IconButton>
+    )
   )
 }
