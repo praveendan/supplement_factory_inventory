@@ -9,15 +9,20 @@ export default function ProductListTable({ rowData, isLoading, categoriesList, d
   const columns= [
    // { field: "id", flex: 1, headerName: "Id" },
     { field: "name", flex: 2, headerName: "Product name" },
-    { field:"category", flex: 2, headerName: "Product category", renderCell: (params) => (
-      <ProductCategoryMapper categoriesList={categoriesList} {...params}/>
-    ),},
+    { field:"category", flex: 2, headerName: "Product category", 
+      valueGetter: getCategoryText,
+    },
     {
       field: "id", width: 100, headerName: 'Action', renderCell: (params) => (
         <ActionCellRenderer deleteFunction={deleteFunction} {...params}/>
       ),
     },
   ];
+
+  function getCategoryText(params) {
+    return categoriesList && categoriesList[params.row.category] && categoriesList[params.row.category].name? 
+    categoriesList[params.row.category].name : "Deleted category"
+  }
 
   return (
     <div style={{ display: 'flex', flexGrow: 1, width: "100%" }}>
@@ -26,13 +31,6 @@ export default function ProductListTable({ rowData, isLoading, categoriesList, d
       </div>
     </div>
   );
-}
-
-const ProductCategoryMapper = (props) => {
-  return (
-    props.categoriesList && props.categoriesList[props.value] && props.categoriesList[props.value].name? 
-    props.categoriesList[props.value].name : "Deleted category"
-  )
 }
 
 const ActionCellRenderer = (props) => {
