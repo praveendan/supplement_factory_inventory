@@ -9,7 +9,7 @@ import CssBaseline from '@material-ui/core/CssBaseline';
 import {BrowserRouter as Router, Switch, Route} from  'react-router-dom';
 
 import Nav from './../shared/Nav';
-import Dashboard from './../dashboard/Dashboard';
+//import Dashboard from './../dashboard/Dashboard';
 import LogSales from './../log_sales/LogSales';
 // import SaleHistory from './../log_sales_history/SaleHistory';
 import BranchManager from './../branch_manager/BranchManager';

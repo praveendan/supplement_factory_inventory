@@ -3,14 +3,14 @@ import ListItem from '@material-ui/core/ListItem';
 import ListItemIcon from '@material-ui/core/ListItemIcon';
 import ListItemText from '@material-ui/core/ListItemText';
 import ListSubheader from '@material-ui/core/ListSubheader';
-import ShoppingCartIcon from '@material-ui/icons/ShoppingCart';
+//import ShoppingCartIcon from '@material-ui/icons/ShoppingCart';
 import StorefrontIcon from '@material-ui/icons/Storefront';
 import CategoryIcon from '@material-ui/icons/Category';
 import FitnessCenterIcon from '@material-ui/icons/FitnessCenter';
 import BallotIcon from '@material-ui/icons/Ballot';
 import AssignmentIcon from '@material-ui/icons/Assignment';
 import MonetizationOnIcon from '@material-ui/icons/MonetizationOn';
-import HistoryIcon from '@material-ui/icons/History';
+//import HistoryIcon from '@material-ui/icons/History';
 import List from '@material-ui/core/List';
 import Collapse from '@material-ui/core/Collapse';
 import ExpandLess from '@material-ui/icons/ExpandLess';
@@ -18,7 +18,7 @@ import ExpandMore from '@material-ui/icons/ExpandMore';
 import CreateIcon from '@material-ui/icons/Create';
 import { Link } from 'react-router-dom';
 import { makeStyles } from '@material-ui/core/styles';
-import {theme} from './../theme/theme'
+//import {theme} from './../theme/theme'
 
 const useStyles = makeStyles((theme) => ({
   link: {
@@ -35,12 +35,12 @@ const useStyles = makeStyles((theme) => ({
 
 export const MainListItems = () => {
   const classes = useStyles();
-  const [openProductLogMenu, setOpenProductLogMenu] = React.useState(false);
+ // const [openProductLogMenu, setOpenProductLogMenu] = React.useState(false);
   const [openProductMenu, setOpenProductMenu] = React.useState(false);
 
-  const handleLogClick = () => {
-    setOpenProductLogMenu(!openProductLogMenu);
-  }
+  // const handleLogClick = () => {
+  //   setOpenProductLogMenu(!openProductLogMenu);
+  // }
   const handleProductClick = () => {
     setOpenProductMenu(!openProductMenu);
   };
