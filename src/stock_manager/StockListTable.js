@@ -49,21 +49,21 @@ export default function StockListTable({ stocks, setStocks, isLoading }) {
       ),
     },
   ];
+  
+  function getNoteText(params) {
+    return `${params.row.note.text|| '-'}`
+  }
 
   return (
     <>
-      <div style={{ display: 'flex', height: 400, width: "100%" }}>
+      <div style={{ display: 'flex', flexGrow: 1, width: "100%" }}>
         <div style={{ flexGrow: 1 }}>
-          <DataGrid rows={stocks} columns={columns} pageSize={5} loading={isLoading} />
+          <DataGrid rows={stocks} columns={columns} loading={isLoading} />
         </div>
       </div>
       <SetNoteModal open={open} setOpen={setOpen} currentItem={currentItem} setCurrentItem={setCurrentItem} stocks={stocks} setStocks={setStocks} />
     </>
   );
-}
-
-function getNoteText(params) {
-  return `${params.row.note.text|| '-'}`
 }
 
 const StockNumberMapper = (props) => {

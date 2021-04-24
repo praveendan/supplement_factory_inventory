@@ -36,7 +36,8 @@ const useStyles = makeStyles((theme) => ({
     flexDirection: 'column',
   },
   fixedHeight: {
-    minHeight: 500,
+    minHeight: theme.classes.fixedHeightPaperMinHeight,
+    height: theme.classes.fixedHeightPaper,
   },
   searchBar: {
     padding: theme.spacing(2),

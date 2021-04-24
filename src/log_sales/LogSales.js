@@ -45,7 +45,14 @@ const useStyles = makeStyles((theme) => ({
     flexDirection: 'column',
   },
   fixedHeight: {
-    minHeight: 500,
+    minHeight: theme.classes.fixedHeightPaperMinHeight,
+    height: theme.classes.fixedHeightPaper,
+  },
+  fixedHeightToolBar: {
+    display: 'flex', 
+    justifyContent:'flex-end', 
+    alignItems:'center',
+    height: theme.classes.fixedHeightPaperToolBar,
   },
   searchBar: {
     padding: theme.spacing(2),
@@ -258,7 +265,7 @@ export default function LogSales() {
 
   return (
     <>
-      <Title>Log Sales</Title>
+      <Title>Log/View Sales</Title>
       <Grid container spacing={3}>
         <Grid item xs={12}>
           <Paper className={classes.searchBar}>
@@ -352,7 +359,7 @@ export default function LogSales() {
         <Grid item xs={12}>
           <Paper className={fixedHeightPaper}>
             <Orders saleItems={saleItems} setSaleItems={setSaleItems} isLoading={isLoading} isEditable={isEditable}/>
-            <div style={{display: 'flex', justifyContent:'flex-end', alignItems:'center', flexGrow: 1}}>
+            <div className={classes.fixedHeightToolBar}>
               {
                 !isEditable && 
                 <Button 
@@ -363,7 +370,7 @@ export default function LogSales() {
                   disabled={saleItems.length === 0 || isSaving}
                   onClick={() =>setDelOpen(true)}
                   >
-                  {isSaving? "Seleting...": "Delete"}
+                  {isSaving? "Deleting...": "Delete"}
                 </Button>
               }
               {

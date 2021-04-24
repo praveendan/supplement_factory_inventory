@@ -43,7 +43,14 @@ const useStyles = makeStyles((theme) => ({
     flexDirection: 'column',
   },
   fixedHeight: {
-    minHeight: 500,
+    minHeight: theme.classes.fixedHeightPaperMinHeight,
+    height: theme.classes.fixedHeightPaper,
+  },
+  fixedHeightToolBar: {
+    display: 'flex', 
+    justifyContent:'flex-end', 
+    alignItems:'center',
+    height: theme.classes.fixedHeightPaperToolBar,
   },
   searchBar: {
     padding: theme.spacing(2),
@@ -114,7 +121,6 @@ export default function LogSales() {
           .get()
           .then((querySnapshot) => {
             if (!querySnapshot.empty) {
-              console.log(querySnapshot.docs[0].id);
               updateInformationOftheBranchDate = querySnapshot.docs[0].data().save_snapshot;
             }
           })
@@ -254,7 +260,7 @@ export default function LogSales() {
         <Grid item xs={12}>
           <Paper className={fixedHeightPaper}>
             <StockListTable stocks={stocks} setStocks={setStocks} isLoading={isLoading}/>
-            <div style={{display: 'flex', justifyContent:'flex-end', alignItems:'center', flexGrow: 1}}>
+            <div className={classes.fixedHeightToolBar}>
               <Button 
                 className={classes.shortInput} 
                 variant="contained" 

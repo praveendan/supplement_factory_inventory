@@ -11,7 +11,7 @@ import {BrowserRouter as Router, Switch, Route} from  'react-router-dom';
 import Nav from './../shared/Nav';
 import Dashboard from './../dashboard/Dashboard';
 import LogSales from './../log_sales/LogSales';
-import SaleHistory from './../log_sales_history/SaleHistory';
+// import SaleHistory from './../log_sales_history/SaleHistory';
 import BranchManager from './../branch_manager/BranchManager';
 import CategoryManager from './../category_manager/CategoryManager';
 import ProductManager from './../product_manager/ProductManager';
@@ -49,7 +49,7 @@ export default function DashaboardLayout() {
             <Switch>
               {/* <Route path="/dashboard"  exact component={Dashboard} /> */}
               <Route path="/dashboard/sales/log-sale"  exact component={LogSales} />
-              <Route path="/dashboard/sales/sale-history" exact component={SaleHistory}/>
+              {/* <Route path="/dashboard/sales/sale-history" exact component={SaleHistory}/> */}
               <Route path="/dashboard/manage-branches"  exact component={BranchManager} />
               <Route path="/dashboard/manage-products" exact component={ProductManager}/>
               <Route path="/dashboard/manage-categories" exact component={CategoryManager}/>

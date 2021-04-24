@@ -20,9 +20,9 @@ export default function OrdersTable({ saleItems, setSaleItems, isLoading, isEdit
     },
   ];
   return (
-    <div style={{ display: 'flex', height: 400, width: "100%" }}>
+    <div style={{ display: 'flex', flexGrow: 1, width: "100%" }}>
       <div style={{ flexGrow: 1 }}>
-        <DataGrid rows={saleItems} columns={columns} pageSize={5} loading={isLoading}/>
+        <DataGrid rows={saleItems} columns={columns} loading={isLoading}/>
       </div>
     </div>
   );

@@ -17,8 +17,24 @@ import ExpandLess from '@material-ui/icons/ExpandLess';
 import ExpandMore from '@material-ui/icons/ExpandMore';
 import CreateIcon from '@material-ui/icons/Create';
 import { Link } from 'react-router-dom';
+import { makeStyles } from '@material-ui/core/styles';
+import {theme} from './../theme/theme'
+
+const useStyles = makeStyles((theme) => ({
+  link: {
+    textDecoration: 'none',
+    color: theme.palette.primary.main
+  },
+  linkExpandable: {
+    color: theme.palette.primary.light
+  },
+  linkIcon: {
+    color: theme.palette.primary.main
+  }
+}));
 
 export const MainListItems = () => {
+  const classes = useStyles();
   const [openProductLogMenu, setOpenProductLogMenu] = React.useState(false);
   const [openProductMenu, setOpenProductMenu] = React.useState(false);
 
@@ -40,7 +56,7 @@ export const MainListItems = () => {
             <ListItemText primary="Dashboard" />
           </ListItem>
         </Link> */}
-        <ListItem button onClick={handleLogClick}>
+        {/* <ListItem button onClick={handleLogClick}>
           <ListItemIcon>
             <MonetizationOnIcon />
           </ListItemIcon>
@@ -54,7 +70,7 @@ export const MainListItems = () => {
                 <ListItemIcon>
                   <ShoppingCartIcon />
                 </ListItemIcon>
-                <ListItemText primary="Log sales" />
+                <ListItemText primary="Sales" />
               </ListItem>
             </Link>
             <Link to="/dashboard/sales/sale-history">
@@ -66,44 +82,52 @@ export const MainListItems = () => {
               </ListItem>
             </Link>
           </List>
-        </Collapse>
-        <Link to="/dashboard/manage-stock">
+        </Collapse> */}
+        <Link className={classes.link} to="/dashboard/sales/log-sale">
           <ListItem button>
             <ListItemIcon>
-              <CreateIcon />
+              <MonetizationOnIcon className={classes.linkIcon}/>
+            </ListItemIcon>
+            <ListItemText primary="Sales" />
+          </ListItem>
+        </Link>
+        <Link className={classes.link} to="/dashboard/manage-stock">
+          <ListItem button>
+            <ListItemIcon>
+              <CreateIcon className={classes.linkIcon}/>
             </ListItemIcon>
             <ListItemText primary="Manage stock" />
           </ListItem>
         </Link>
-        <Link to="/dashboard/manage-branches">
+        <Link className={classes.link} to="/dashboard/manage-branches">
           <ListItem button>
             <ListItemIcon>
-              <StorefrontIcon />
+              <StorefrontIcon className={classes.linkIcon}/>
             </ListItemIcon>
             <ListItemText primary="Branches" />
           </ListItem>
         </Link>
-        <ListItem button onClick={handleProductClick}>
+        <ListItem button className={classes.linkExpandable} onClick={handleProductClick}>
           <ListItemIcon>
-            <BallotIcon />
+            <BallotIcon className={classes.linkIcon}/>
           </ListItemIcon>
           <ListItemText primary="Item management" />
           {openProductMenu ? <ExpandLess /> : <ExpandMore />}
         </ListItem>
         <Collapse in={openProductMenu} timeout="auto" unmountOnExit>
           <List component="div" disablePadding>
-            <Link to="/dashboard/manage-products">
+            <Link className={classes.link} to="/dashboard/manage-products">
               <ListItem button>
                 <ListItemIcon>
-                  <FitnessCenterIcon />
+                  <FitnessCenterIcon className={classes.linkIcon}/>
                 </ListItemIcon>
                 <ListItemText primary="Products" />
               </ListItem>
             </Link>
-            <Link to="/dashboard/manage-categories">
+            <Link className={classes.link} to="/dashboard/manage-categories">
               <ListItem button>
                 <ListItemIcon>
-                  <CategoryIcon />
+                  <CategoryIcon className={classes.linkIcon}/>
                 </ListItemIcon>
                 <ListItemText primary="Categories" />
               </ListItem>

@@ -4,7 +4,9 @@ import './App.css';
 import { auth } from './firebaseConfig'
 import Backdrop from '@material-ui/core/Backdrop';
 import CircularProgress from '@material-ui/core/CircularProgress';
-import { makeStyles } from '@material-ui/core/styles';
+import { makeStyles, ThemeProvider } from '@material-ui/core/styles';
+import {theme} from './theme/theme';
+
 import {
   BrowserRouter as Router,
   Route,
@@ -56,6 +58,7 @@ export default function App() {
 
   return (
     !isLoading? 
+    <ThemeProvider theme={theme}>
       <Router>
         <div>
         <Switch>
@@ -73,6 +76,7 @@ export default function App() {
           </Switch>
         </div>
       </Router>
+      </ThemeProvider>
     : <Backdrop className={classes.backdrop} open={isLoading}>
         <CircularProgress color="inherit" />
       </Backdrop>

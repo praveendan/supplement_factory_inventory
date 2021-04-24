@@ -20,9 +20,9 @@ export default function ProductListTable({ rowData, isLoading, categoriesList, d
   ];
 
   return (
-    <div style={{ display: 'flex', height: 400, width: "100%" }}>
+    <div style={{ display: 'flex', flexGrow: 1, width: "100%" }}>
       <div style={{ flexGrow: 1 }}>
-        <DataGrid rows={rowData} columns={columns} pageSize={5} loading={isLoading}/>
+        <DataGrid rows={rowData} columns={columns} categoriesList={categoriesList} loading={isLoading}/>
       </div>
     </div>
   );
