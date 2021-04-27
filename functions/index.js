@@ -222,68 +222,6 @@ exports.deleteSaleLog = functions.https.onCall((data, context) => {
   })
 });
 
-// // Saves the sale log
-// exports.updateSaleLog = functions.https.onCall((data, context) => {
-//   if (!context.auth) return {status: 'error', code: 401, message: 'Not signed in'}
-//   let branch = data.branch;
-//   let inventoryUpdateSnapshot = data.inventoryUpdateSnapshot;
-//   let date = data.date;
-//   let logSnapshot = {} 
-//   logSnapshot[branch] = data.logSnapshot;
-
-//   return admin.firestore().collection("sales").doc(date).set(logSnapshot, { merge: true })
-//   .then(() => {
-//     console.log(`Log ${date}-${branch} successfully written!`);
-//     return admin.firestore().collection("inventory").doc(branch).get()
-//     .then((doc) => {
-//       if (doc.exists) {
-//         let documentData = doc.data();
-//         Object.keys(inventoryUpdateSnapshot).forEach((itemKey) => {
-//           if(documentData[itemKey]){
-//             documentData[itemKey] += inventoryUpdateSnapshot[itemKey];
-//           } else {
-//             documentData[itemKey] = inventoryUpdateSnapshot[itemKey];
-//           }
-//         });
-
-//         return admin.firestore().collection("inventory").doc(branch).update(documentData)
-//           .then(() => {
-//             console.log(`Inventory update ${branch} successful`);
-//             // Returning the sanitized message to the client.
-//             return { status: "SUCCESS" };
-//           })
-//           .catch((error) => {
-//             console.log(`Inventory update ${branch} unsuccessful`, error);
-//             return { 
-//               status: "FAILURE",
-//               message: "Error in updating the inventory"
-//             };
-//           });
-//       } else {
-//           // doc.data() will be undefined in this case
-//           console.log(`No such branch ${branch} in update`);
-//           return { 
-//             status: "FAILURE",
-//             message: "No such branch in the inventory to update"
-//           };
-//       }
-//     }).catch((error) => {
-//         console.log("Error getting document in update:", error);
-//         return { 
-//           status: "FAILURE",
-//           message: "Error retrieving the branch to update the inventory"
-//         };
-//     });
-//   })
-//   .catch((error) => {
-//     console.error(`Error writing document ${date}-${branch}: `, error);
-//     return { 
-//       status: "FAILURE",
-//       message: "Error writing log"
-//     };
-//   });  
-// });
-
 exports.updateInventory = functions.https.onCall(async (data, context) => {
   if (!context.auth) return {status: 'error', code: 401, message: 'Not signed in'}
   let branch = data.branch;
