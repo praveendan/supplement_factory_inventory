@@ -3,9 +3,8 @@ import { DataGrid } from '@material-ui/data-grid';
 
 export default function SaleHistoryListTable({ rowData, setStocks, isLoading }) {
   const columns= [
-    { field: "id", flex: 1, headerName: "Id" },
     { field: "name", flex: 2, headerName: "Name" },
-    { field:"numberOfItems", flex: 2, headerName: "Number of items"},
+    { field:"numberOfItems", flex: 1, headerName: "Total number of items"},
   ];
 
   return (

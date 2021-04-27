@@ -23,7 +23,7 @@ export default function Datepicker({currentDate, setcurrentDate, ...props}) {
 
   return (
     <TextField 
-      id="date" label="Date"
+      id="date" label={props.label? props.label: "Date"}
       variant="outlined"
       type="date"
       size="small" 

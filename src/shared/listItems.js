@@ -3,14 +3,14 @@ import ListItem from '@material-ui/core/ListItem';
 import ListItemIcon from '@material-ui/core/ListItemIcon';
 import ListItemText from '@material-ui/core/ListItemText';
 import ListSubheader from '@material-ui/core/ListSubheader';
-//import ShoppingCartIcon from '@material-ui/icons/ShoppingCart';
+import ShoppingCartIcon from '@material-ui/icons/ShoppingCart';
 import StorefrontIcon from '@material-ui/icons/Storefront';
 import CategoryIcon from '@material-ui/icons/Category';
 import FitnessCenterIcon from '@material-ui/icons/FitnessCenter';
 import BallotIcon from '@material-ui/icons/Ballot';
 import AssignmentIcon from '@material-ui/icons/Assignment';
 import MonetizationOnIcon from '@material-ui/icons/MonetizationOn';
-//import HistoryIcon from '@material-ui/icons/History';
+import HistoryIcon from '@material-ui/icons/History';
 import List from '@material-ui/core/List';
 import Collapse from '@material-ui/core/Collapse';
 import ExpandLess from '@material-ui/icons/ExpandLess';
@@ -35,12 +35,12 @@ const useStyles = makeStyles((theme) => ({
 
 export const MainListItems = () => {
   const classes = useStyles();
- // const [openProductLogMenu, setOpenProductLogMenu] = React.useState(false);
+  const [openProductLogMenu, setOpenProductLogMenu] = React.useState(false);
   const [openProductMenu, setOpenProductMenu] = React.useState(false);
 
-  // const handleLogClick = () => {
-  //   setOpenProductLogMenu(!openProductLogMenu);
-  // }
+  const handleLogClick = () => {
+    setOpenProductLogMenu(!openProductLogMenu);
+  }
   const handleProductClick = () => {
     setOpenProductMenu(!openProductMenu);
   };
@@ -56,41 +56,33 @@ export const MainListItems = () => {
             <ListItemText primary="Dashboard" />
           </ListItem>
         </Link> */}
-        {/* <ListItem button onClick={handleLogClick}>
+        <ListItem button className={classes.linkExpandable} onClick={handleLogClick}>
           <ListItemIcon>
-            <MonetizationOnIcon />
+            <MonetizationOnIcon className={classes.linkIcon}/>
           </ListItemIcon>
           <ListItemText primary="Sales" />
           {openProductLogMenu ? <ExpandLess /> : <ExpandMore />}
         </ListItem>
         <Collapse in={openProductLogMenu} timeout="auto" unmountOnExit>
           <List component="div" disablePadding>
-            <Link to="/dashboard/sales/log-sale">
+            <Link className={classes.link} to="/dashboard/sales/log-sale">
               <ListItem button>
                 <ListItemIcon>
-                  <ShoppingCartIcon />
+                  <ShoppingCartIcon className={classes.linkIcon}/>
                 </ListItemIcon>
                 <ListItemText primary="Sales" />
               </ListItem>
             </Link>
-            <Link to="/dashboard/sales/sale-history">
+            <Link className={classes.link} to="/dashboard/sales/sale-history">
               <ListItem button>
                 <ListItemIcon>
-                  <HistoryIcon />
+                  <HistoryIcon className={classes.linkIcon}/>
                 </ListItemIcon>
                 <ListItemText primary="View history" />
               </ListItem>
             </Link>
           </List>
-        </Collapse> */}
-        <Link className={classes.link} to="/dashboard/sales/log-sale">
-          <ListItem button>
-            <ListItemIcon>
-              <MonetizationOnIcon className={classes.linkIcon}/>
-            </ListItemIcon>
-            <ListItemText primary="Sales" />
-          </ListItem>
-        </Link>
+        </Collapse>
         <Link className={classes.link} to="/dashboard/manage-stock">
           <ListItem button>
             <ListItemIcon>

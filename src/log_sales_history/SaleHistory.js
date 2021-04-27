@@ -17,7 +17,7 @@ import Snackbar from './../shared/Notification'
 
 // Generate Order Data
 function createData(id, name, numberOfItems) {
-  return { id, name, numberOfItems };
+  return { id, name: name? name : "Deleted item", numberOfItems };
 }
 
 const useStyles = makeStyles((theme) => ({
@@ -37,7 +37,8 @@ const useStyles = makeStyles((theme) => ({
     flexDirection: 'column',
   },
   fixedHeight: {
-    minHeight: 500,
+    minHeight: theme.classes.fixedHeightPaperMinHeight,
+    height: theme.classes.fixedHeightPaper,
   },
   searchBar: {
     padding: theme.spacing(2),
@@ -46,6 +47,7 @@ const useStyles = makeStyles((theme) => ({
 
 export default function SaleHistory() {
   const classes = useStyles();
+  const [fromDate, setFromDate] = useState("");
   const [currentDate, setcurrentDate] = useState("");
   const [currentBranch, setCurrentBranch] = React.useState('');
   const dbSalesInstance = dbInstance.collection("sales");
@@ -82,33 +84,43 @@ export default function SaleHistory() {
   }, []);
 
   useEffect(() => {
-    if (currentDate && currentDate !== "" && currentBranch && currentBranch !== "") {
+    if (fromDate && fromDate !== "" && currentDate && currentDate !== "" && currentBranch && currentBranch !== "") {
       setIsLoading(true);
-      dbSalesInstance.doc(currentDate).get()
-        .then((doc) => {
-          if (doc.exists) {
-            var tempArray = [];
-            let dataObject = doc.data()[currentBranch];
-            if (dataObject) {
-              Object.keys(dataObject).forEach((d) => {
-                tempArray.push(createData(d, productsObject[d]? productsObject[d].name: "Not available", dataObject[d]))
-              });
-            }
-            setSaleHistory(tempArray);
-            setIsLoading(false);
-          } else {
-            setSaleHistory([]);
-            setIsLoading(false);
+      
+      var myDate = fromDate.split("-");
+      var newDate = new Date( myDate[0], myDate[1] - 1, myDate[2]);
+      const fromDateTimeStamp = newDate.getTime();
+
+      myDate = currentDate.split("-");
+      newDate = new Date( myDate[0], myDate[1] - 1, myDate[2]);
+
+      const toDateTimeStamp = newDate.getTime();
+
+      let countObject = {};
+
+      dbSalesInstance.where("date", ">=", fromDateTimeStamp).where("date", "<=", toDateTimeStamp)
+      .get().then((querySnapshot) => {
+        querySnapshot.forEach((doc) => {
+          const data = doc.data()[currentBranch];
+          if(data) {
+            Object.keys(data).forEach(itemKey => {
+              if(countObject[itemKey]){
+                countObject[itemKey] += data[itemKey];
+              } else {
+                countObject[itemKey] = data[itemKey];
+              }
+            })
           }
-        })
-        .catch((error) => {
-          console.log("Error retrieving data: ", error);
-          showNotificationMessage("error", "Error retrieving data. Please try again later.")
-          setSaleHistory([]);
-          setIsLoading(false);
+          
         });
+        
+        setIsLoading(false);
+        let itemsArray = Object.keys(countObject).map(item => createData(item, productsObject[item]? productsObject[item].name: "Deleted item", countObject[item]))
+        setSaleHistory(itemsArray);
+      });
+
     }
-  }, [currentDate, currentBranch])
+  }, [fromDate, currentDate, currentBranch])
 
   const showNotificationMessage = (severety, message) => {
     setNotification(message);
@@ -126,14 +138,22 @@ export default function SaleHistory() {
           <Paper className={classes.searchBar}>
             <Grid justify="flex-end" className={classes.formRoot} container spacing={3}>
               <Grid item xs={12} sm={6} lg={3}>
-                <DatePicker className={classes.shortInput} currentDate={currentDate}
+                <DatePicker className={classes.shortInput} currentDate={fromDate} label="From"
                   disabled={
-                    Object.keys(productsObject).length === 0 &&
+                    Object.keys(productsObject).length === 0 ||
+                    Object.keys(branchesObject).length === 0
+                  }
+                  setcurrentDate={setFromDate} />
+              </Grid>
+              <Grid item xs={12} sm={6} lg={3}>
+                <DatePicker className={classes.shortInput} currentDate={currentDate} label="To"
+                  disabled={
+                    Object.keys(productsObject).length === 0 ||
                     Object.keys(branchesObject).length === 0
                   }
                   setcurrentDate={setcurrentDate} />
               </Grid>
-              <Grid item xs={12} sm={6} lg={3}>
+              <Grid item xs={12} sm={12} lg={3}>
                 <FormControl className={classes.shortInput} variant="outlined" size="small">
                   <InputLabel htmlFor="category-selector">Branch</InputLabel>
                   <Select
@@ -144,7 +164,7 @@ export default function SaleHistory() {
                       id: 'branch-selector',
                     }}
                     disabled={
-                      Object.keys(productsObject).length === 0 &&
+                      Object.keys(productsObject).length === 0 ||
                       Object.keys(branchesObject).length === 0
                     }
                     value={currentBranch}

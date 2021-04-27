@@ -84,8 +84,13 @@ exports.updateSaleLog = functions.https.onCall((data, context) => {
   if (!context.auth) return {status: 'error', code: 401, message: 'Not signed in'}
   let branch = data.branch;
   let date = data.date;
+
+  myDate = date.split("-");
+  var newDate = new Date( myDate[0], myDate[1] - 1, myDate[2]);
+
   let logSnapshot = {} 
   logSnapshot[branch] = data.recordItems;
+  logSnapshot.date = newDate.getTime();
 
   return admin.firestore().collection("sales").doc(date).set(logSnapshot, { merge: true })
   .then(() => {
