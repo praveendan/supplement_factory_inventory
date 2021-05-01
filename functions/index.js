@@ -82,8 +82,8 @@ exports.updateInventoryOnDeleteProduct = functions.firestore
 // Saves the sale log
 exports.updateSaleLog = functions.https.onCall((data, context) => {
   if (!context.auth) return {status: 'error', code: 401, message: 'Not signed in'}
-  let branch = data.branch;
-  let date = data.date;
+  const branch = data.branch;
+  const date = data.date;
 
   myDate = date.split("-");
   var newDate = new Date( myDate[0], myDate[1] - 1, myDate[2]);
@@ -148,8 +148,8 @@ exports.updateSaleLog = functions.https.onCall((data, context) => {
 // deletes the sale log
 exports.deleteSaleLog = functions.https.onCall((data, context) => {
   if (!context.auth) return {status: 'error', code: 401, message: 'Not signed in'}
-  let branch = data.branch;
-  let date = data.date;
+  const branch = data.branch;
+  const date = data.date;
 
   return admin.firestore().collection("sales").doc(date).get()
   .then((doc) => {
@@ -222,9 +222,167 @@ exports.deleteSaleLog = functions.https.onCall((data, context) => {
   })
 });
 
+//deletes one item from the sale log
+exports.deleteSaleLogItem = functions.https.onCall((data, context) => {
+  if (!context.auth) return {status: 'error', code: 401, message: 'Not signed in'}
+  const branch = data.branch;
+  const date = data.date;
+  const itemId = data.id;
+
+  return admin.firestore().collection("sales").doc(date).get()
+  .then((doc) => {
+    if(doc.exists){
+      let documentData = doc.data();
+      let numberOfSale = documentData[branch][itemId];
+
+      delete documentData[branch][itemId]
+
+      return admin.firestore().collection("inventory").doc(branch).get()
+      .then((branchDoc) => {
+        if (branchDoc.exists) {
+          let branchDocumentData = branchDoc.data();
+
+          if(branchDocumentData[itemId]){
+            branchDocumentData[itemId] += numberOfSale;
+          } else {
+            branchDocumentData[itemId] = numberOfSale;
+          } 
+          return admin.firestore().collection("inventory").doc(branch).update(branchDocumentData)
+            .then(() => {
+              console.log(`Inventory update of deletion ${branch}-${itemId} successful`);
+              return admin.firestore().collection("sales").doc(date).set(documentData)
+              .then(()=> {
+                return { status: "SUCCESS" };
+              })
+              .catch((e) => {
+                return { 
+                  status: "FAILURE",
+                  message: "Error in updating the sale record"
+                };
+              })              
+            })
+            .catch((error) => {
+              console.log(`Inventory update of deletion ${branch}-${itemId} unsuccessful`, error);
+              return { 
+                status: "FAILURE",
+                message: "Error in updating the inventory"
+              };
+            });
+        } else {
+          // doc.data() will be undefined in this case
+          console.log(`No such branch ${branch} to update deletion`);
+          return { 
+            status: "FAILURE",
+            message: "No such branch in the inventory to update deletion"
+          };
+        }
+      }).catch((error) => {
+          console.log("Error getting document in update:", error);
+          return { 
+            status: "FAILURE",
+            message: "Error retrieving the branch to update the inventory update"
+          };
+      });
+    } else {
+      return { 
+        status: "FAILURE",
+        message: "Error retrieving the log to update"
+      };
+    }
+  })
+  .catch((error) => {
+    return { 
+      status: "FAILURE",
+      message: "Critical error in retrieving the log to update"
+    };
+  })
+});
+
+//for update a sale record
+exports.addSaleLogItem = functions.https.onCall((data, context) => {
+  if (!context.auth) return {status: 'error', code: 401, message: 'Not signed in'}
+  const branch = data.branch;
+  const date = data.date;
+  const itemId = data.itemId;
+  const numberOfSale = data.numberOfSale;
+
+  return admin.firestore().collection("sales").doc(date).get()
+  .then((doc) => {
+    if(doc.exists){
+      let documentData = doc.data();
+      if(documentData[branch]){
+        documentData[branch][itemId] = numberOfSale;
+      } else {
+        documentData[branch] = {};
+        documentData[branch][itemId] = numberOfSale;
+      }
+        
+
+      return admin.firestore().collection("inventory").doc(branch).get()
+      .then((branchDoc) => {
+        if (branchDoc.exists) {
+          let branchDocumentData = branchDoc.data();
+
+          if(branchDocumentData[itemId]){
+            branchDocumentData[itemId] -= numberOfSale;
+          } else {
+            branchDocumentData[itemId] = -numberOfSale;
+          } 
+          return admin.firestore().collection("inventory").doc(branch).update(branchDocumentData)
+            .then(() => {
+              console.log(`Inventory update of ${branch}-${itemId} successful`);
+              return admin.firestore().collection("sales").doc(date).set(documentData)
+              .then(()=> {
+                return { status: "SUCCESS" };
+              })
+              .catch((e) => {
+                return { 
+                  status: "FAILURE",
+                  message: "Error in updating the sale record"
+                };
+              })              
+            })
+            .catch((error) => {
+              console.log(`Inventory update of deletion ${branch}-${itemId} unsuccessful`, error);
+              return { 
+                status: "FAILURE",
+                message: "Error in updating the inventory"
+              };
+            });
+        } else {
+          // doc.data() will be undefined in this case
+          console.log(`No such branch ${branch} to update deletion`);
+          return { 
+            status: "FAILURE",
+            message: "No such branch in the inventory to update deletion"
+          };
+        }
+      }).catch((error) => {
+          console.log("Error getting document in update:", error);
+          return { 
+            status: "FAILURE",
+            message: "Error retrieving the branch to update the inventory update"
+          };
+      });
+    } else {
+      return { 
+        status: "FAILURE",
+        message: "Error retrieving the log to update"
+      };
+    }
+  })
+  .catch((error) => {
+    return { 
+      status: "FAILURE",
+      message: "Critical error in retrieving the log to update"
+    };
+  })
+
+});
+
 exports.updateInventory = functions.https.onCall(async (data, context) => {
   if (!context.auth) return {status: 'error', code: 401, message: 'Not signed in'}
-  let branch = data.branch;
+  const branch = data.branch;
   let stocksUpdateObject = data.stocksUpdateObject;
   let inventoryUpdateSnapshot = data.inventoryUpdateSnapshot;
   const promises = [];

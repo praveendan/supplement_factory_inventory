@@ -157,40 +157,110 @@ export default function LogSales() {
     setNotificationSeverity(severety);
   }
 
-  const addItemToList = () => {
+  const addItemToList = async() => {
     var tempArray = saleItems.slice();
-    const found = tempArray.findIndex(element => element.itemCode === currentItem.itemCode);
-    //to update the array
-    if(-1 === found){ 
-      tempArray.push({
-        id: currentItem.itemCode,
-        saleDate: currentDate,
-        saleBranch: currentBranch,
-        saleItem: currentItem.itemName,
-        saleNumberOfItems: currentReturnState? -currentNumberOfItem: currentNumberOfItem,
-        saleIsReturn: currentReturnState,
-        itemCode: currentItem.itemCode
-      });
-    } else {
-      if(currentReturnState) {
-        tempArray[found].saleNumberOfItems = tempArray[found].saleNumberOfItems - currentNumberOfItem;
+    if(isEditable){
+      const found = tempArray.findIndex(element => element.itemCode === currentItem.itemCode);
+      //to update the array
+      if(-1 === found){ 
+        tempArray.push({
+          id: currentItem.itemCode,
+          saleDate: currentDate,
+          saleBranch: currentBranch,
+          saleItem: currentItem.itemName,
+          saleNumberOfItems: currentReturnState? -currentNumberOfItem: currentNumberOfItem,
+          saleIsReturn: currentReturnState,
+          itemCode: currentItem.itemCode
+        });
       } else {
-        tempArray[found].saleNumberOfItems = tempArray[found].saleNumberOfItems + currentNumberOfItem;
+        if(currentReturnState) {
+          tempArray[found].saleNumberOfItems = tempArray[found].saleNumberOfItems - currentNumberOfItem;
+        } else {
+          tempArray[found].saleNumberOfItems = tempArray[found].saleNumberOfItems + currentNumberOfItem;
+        }
+        if(tempArray[found].saleNumberOfItems === 0){
+          tempArray.splice(found, 1);
+        }          
       }
-      if(tempArray[found].saleNumberOfItems === 0){
-        tempArray.splice(found, 1);
-      }          
+    } else {
+      let res = await addItemFromLog();
+      if(res === true) {
+        tempArray.push({
+          id: currentItem.itemCode,
+          saleDate: currentDate,
+          saleBranch: currentBranch,
+          saleItem: currentItem.itemName,
+          saleNumberOfItems: currentReturnState? -currentNumberOfItem: currentNumberOfItem,
+          saleIsReturn: currentReturnState,
+          itemCode: currentItem.itemCode
+        });
+      }
     }
-
     setSaleItems(tempArray)
   }
 
-  const removeItemFromList = (id) => {
-    var tempArray = saleItems.slice();
-    let index = tempArray.findIndex((item) => item.id === id );
+  const removeItemFromLog = (id) => {
+    let itemToRemove = {
+      date: currentDate,
+      branch: currentBranch,
+      id: id,
+    }
 
-    tempArray.splice(index, 1);
-    setSaleItems(tempArray)
+    setIsSaving(true);
+    var removeLogItem = functions.httpsCallable('deleteSaleLogItem');
+    return removeLogItem(itemToRemove)
+    .then((result) => {
+      if(result.data.status === "SUCCESS"){
+        setIsSaving(false);
+        return true;
+      } else {
+        showNotificationMessage("error", result.data.message? result.data.message : "Error saving data.");
+        return false;
+      }
+    })
+    .catch((error) => {
+      var code = error.code;
+      var message = error.message;
+      setIsSaving(false);
+      showNotificationMessage("error", `Error: ${message} Code: ${code}`);
+      return false;
+    });
+  }
+
+  const addItemFromLog = () => {
+    let found = saleItems.findIndex(element => element.itemCode === currentItem.itemCode);
+
+    if(-1 === found){
+      let itemToAdd = {
+        branch : currentBranch,
+        date : currentDate,
+        itemId : currentItem.itemCode,
+        numberOfSale : currentNumberOfItem,
+      }
+  
+      setIsSaving(true);
+      var addLogItem = functions.httpsCallable('addSaleLogItem');
+      return addLogItem(itemToAdd)
+      .then((result) => {
+        if(result.data.status === "SUCCESS"){
+          setIsSaving(false);
+          return true;
+        } else {
+          showNotificationMessage("error", result.data.message? result.data.message : "Error saving data.");
+          return false;
+        }
+      })
+      .catch((error) => {
+        var code = error.code;
+        var message = error.message;
+        setIsSaving(false);
+        showNotificationMessage("error", `Error: ${message} Code: ${code}`);
+        return false;
+      });
+     } else {
+        showNotificationMessage("warning", "The item already exists. Please remove the item from the list to re add");
+        return false;
+     }
   }
   
   const setNumberOfItems = (e) => {
@@ -203,8 +273,6 @@ export default function LogSales() {
   const saveLog = () => {
     setIsSaving(true);
     setOpen(false);
-    // setIsAddButtonDisabled(true);
-    // setIsEditable(false);
 
     let tempUpdateObject = {};
     saleItems.forEach(element => {
@@ -215,7 +283,6 @@ export default function LogSales() {
     tempSaleItemsObject.recordItems = tempUpdateObject;
     tempSaleItemsObject.date = currentDate;
     tempSaleItemsObject.branch = currentBranch;
-    console.log(tempSaleItemsObject);
 
     var addLog = functions.httpsCallable('updateSaleLog');
     addLog(tempSaleItemsObject)
@@ -273,8 +340,9 @@ export default function LogSales() {
               <Grid item xs={12} sm={6} lg={2}>
                 <DatePicker className={classes.shortInput} currentDate={currentDate} 
                 disabled={
-                  Object.keys(productsObject).length === 0 && 
-                  Object.keys(branchesObject).length === 0 
+                  Object.keys(productsObject).length === 0 || 
+                  Object.keys(branchesObject).length === 0 ||
+                  isSaving === true
                 }
                 setcurrentDate={setcurrentDate}/>
               </Grid>
@@ -289,8 +357,9 @@ export default function LogSales() {
                       id: 'branch-selector',
                     }}
                     disabled={
-                      Object.keys(productsObject).length === 0 && 
-                      Object.keys(branchesObject).length === 0 
+                      Object.keys(productsObject).length === 0 || 
+                      Object.keys(branchesObject).length === 0 ||
+                      isSaving === true
                     }
                     value={currentBranch}
                     onChange={(e) => setCurrentBranch(e.target.value)}
@@ -303,7 +372,11 @@ export default function LogSales() {
               <Grid item xs={12} sm={6} lg={3}>
                 <ProductsDropDown
                   productsObject={productsObject}
-                  disabled={!isEditable}
+                  disabled={
+                    Object.keys(productsObject).length === 0 || 
+                    Object.keys(branchesObject).length === 0 ||
+                    isSaving === true
+                  }
                   id="combo-box-demo"
                   className={classes.shortInput}
                   size="small"
@@ -317,7 +390,11 @@ export default function LogSales() {
                 variant="outlined" 
                 label="Number of items"
                 type="number"
-                disabled={!isEditable}
+                disabled={
+                  Object.keys(productsObject).length === 0 || 
+                  Object.keys(branchesObject).length === 0 ||
+                  isSaving === true
+                }
                 InputProps={{ inputProps: { min: 0} }}
                 value={parseInt(currentNumberOfItem)}
                 onChange={setNumberOfItems}
@@ -333,7 +410,11 @@ export default function LogSales() {
                       name: 'return',
                       id: 'return-selector',
                     }}
-                    disabled={!isEditable}
+                    disabled={
+                      Object.keys(productsObject).length === 0 || 
+                      Object.keys(branchesObject).length === 0 ||
+                      isSaving === true
+                    }
                     value={currentReturnState}
                     onChange={(e) => setCurrentReturnState(e.target.value === 'true'? true: false)}
                   >
@@ -347,7 +428,7 @@ export default function LogSales() {
                 className={classes.shortInput} 
                 variant="contained" 
                 color="primary"
-                disabled={(currentDate === "" || currentBranch === "" || currentItem === null || currentNumberOfItem === 0 || !isEditable)? true: false}
+                disabled={(currentDate === "" || currentBranch === "" || currentItem === null || currentNumberOfItem === 0 || isSaving)? true: false}
                 onClick={addItemToList}
                 >
                   Add
@@ -358,7 +439,7 @@ export default function LogSales() {
         </Grid>   
         <Grid item xs={12}>
           <Paper className={fixedHeightPaper}>
-            <Orders saleItems={saleItems} setSaleItems={setSaleItems} isLoading={isLoading} isEditable={isEditable}/>
+            <Orders saleItems={saleItems} setSaleItems={setSaleItems} isLoading={isLoading} isEditable={isEditable} removeItemFromLog={removeItemFromLog}/>
             <div className={classes.fixedHeightToolBar}>
               {
                 !isEditable && 
@@ -370,7 +451,7 @@ export default function LogSales() {
                   disabled={saleItems.length === 0 || isSaving}
                   onClick={() =>setDelOpen(true)}
                   >
-                  {isSaving? "Deleting...": "Delete"}
+                  {isSaving? "Updating...": "Delete"}
                 </Button>
               }
               {

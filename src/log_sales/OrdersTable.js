@@ -4,7 +4,7 @@ import DeleteIcon from '@material-ui/icons/Delete';
 
 import { DataGrid } from '@material-ui/data-grid';
 
-export default function OrdersTable({ saleItems, setSaleItems, isLoading, isEditable, ...props }) {
+export default function OrdersTable({ saleItems, setSaleItems, isLoading, isEditable, removeItemFromLog, ...props }) {
   const columns = [
     {field: "saleItem", flex: 2, headerName: "Item" },
     {field: "saleNumberOfItems", flex: 1, headerName: "Change in number of items", renderCell: (params) => (
@@ -15,7 +15,7 @@ export default function OrdersTable({ saleItems, setSaleItems, isLoading, isEdit
     )},
     {
       field: "id", width: 100, headerName: 'Action', renderCell: (params) => (
-        <ActionCellRenderer saleItems={saleItems} setSaleItems={setSaleItems} rowIndex={params.rowIndex} isEditableButton={isEditable} {...params}/>
+        <ActionCellRenderer saleItems={saleItems} setSaleItems={setSaleItems} rowIndex={params.rowIndex} isEditableButton={isEditable} removeItemFromLog={removeItemFromLog} {...params}/>
       ),
     },
   ];
@@ -39,13 +39,20 @@ const ActionCellRenderer = (props) => {
     props.setSaleItems(tempArray)
   }
 
+  const removeItemFromLog = async(e, id) => {
+    let res = await props.removeItemFromLog(id);
+    if(res === true){
+      removeItem(e, id)
+    }
+  }
+
   return (
     props.isEditableButton? (
       <IconButton aria-label="delete" onClick={(e) => removeItem(e, props.row.id)}>
         <DeleteIcon />
       </IconButton>
     ):(
-      <IconButton aria-label="delete" disabled>
+      <IconButton aria-label="delete" onClick={(e) => removeItemFromLog(e, props.row.id)}>
         <DeleteIcon />
       </IconButton>
     )
