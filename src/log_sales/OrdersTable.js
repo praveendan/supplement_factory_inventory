@@ -7,7 +7,7 @@ import { DataGrid } from '@material-ui/data-grid';
 export default function OrdersTable({ saleItems, setSaleItems, isLoading, isEditable, removeItemFromLog, ...props }) {
   const columns = [
     {field: "saleItem", flex: 2, headerName: "Item" },
-    {field: "saleNumberOfItems", flex: 1, headerName: "Change in number of items", renderCell: (params) => (
+    {field: "saleNumberOfItems", width: 250, headerName: "Change in number of items", renderCell: (params) => (
       params.value < 0 ? -params.value: params.value
     )},
     {field: "saleIsReturn", width: 200, headerName: "Inventory change?", renderCell: (params) =>(

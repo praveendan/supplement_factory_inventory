@@ -9,7 +9,7 @@ export default function ProductListTable({ rowData, isLoading, categoriesList, d
   const columns= [
    // { field: "id", flex: 1, headerName: "Id" },
     { field: "name", flex: 2, headerName: "Product name" },
-    { field:"category", flex: 2, headerName: "Product category", 
+    { field:"category", flex: 1, headerName: "Product category", 
       valueGetter: getCategoryText,
     },
     {
