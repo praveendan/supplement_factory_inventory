@@ -17,11 +17,13 @@ import DatePicker from '../shared/Datepicker'
 
 import { ReferenceDataContext } from "./../ReferenceDataContext"
 
+import generatePDF from './GeneratePDF'
+
 // Generate Order Data
 function createData(id, name, categoryName , numberOfItems, tempNumberUpdate=0, note={
   is_predefined: false,
   text: ""
-}) {
+  }) {
   return { id, name, categoryName, numberOfItems, tempNumberUpdate, isUpdated: false, note };
 }
 
@@ -261,6 +263,13 @@ export default function LogSales() {
           <Paper className={fixedHeightPaper}>
             <StockListTable stocks={stocks} setStocks={setStocks} isLoading={isLoading}/>
             <div className={classes.fixedHeightToolBar}>
+            <Button
+              className="btn btn-primary"
+              color="primary"
+              onClick={() => generatePDF(stocks,branchesObject[currentStockBranch].name)}
+            >
+              Download stocks
+            </Button>
               <Button 
                 className={classes.shortInput} 
                 variant="contained" 
