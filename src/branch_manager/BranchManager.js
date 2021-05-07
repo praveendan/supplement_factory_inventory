@@ -8,7 +8,6 @@ import TextField from '@material-ui/core/TextField';
 
 import { dbInstance } from './../firebaseConfig';
 
-import Title from './../shared/Title'
 import BranchListTable from './BranchListTable';
 
 import Snackbar from './../shared/Notification'
@@ -101,10 +100,10 @@ export default function BranchManager() {
 
   return (
     <>
-      <Title>Branch Manager</Title>
-      <Grid container spacing={3}>
+      <Grid container spacing={1}>
         <Grid item xs={12}>
-          <Paper className={classes.searchBar}>
+          <fieldset  className={clsx(classes.searchBar, "MuiPaper-elevation1",  "MuiPaper-rounded", "paper-looking-fieldset")}>
+            <legend className="paper-looking-fieldset-legend">Branch Manager</legend>
             <Grid justify="flex-end" className={classes.formRoot} container spacing={3}>
               <Grid item xs={12} sm={6} lg={3}>
                 <TextField className={classes.shortInput} id="branch-name" onChange={(e) => setValue(e.target.value)} label="Branch name" variant="outlined" size="small" />
@@ -115,7 +114,7 @@ export default function BranchManager() {
                 </Button>
               </Grid>
             </Grid> 
-          </Paper>
+          </fieldset>
         </Grid>   
         <Grid item xs={12}>
           <Paper className={fixedHeightPaper}>

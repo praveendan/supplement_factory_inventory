@@ -11,7 +11,6 @@ import FormControl from '@material-ui/core/FormControl';
 
 import { dbInstance } from './../firebaseConfig';
 
-import Title from '../shared/Title'
 import ProductListTable from './ProductListTable';
 import Snackbar from './../shared/Notification';
 
@@ -113,10 +112,10 @@ export default function LogSales() {
 
   return (
     <>
-      <Title>Product Manager</Title>
-      <Grid container spacing={3}>
+      <Grid container spacing={1}>
         <Grid item xs={12}>
-          <Paper className={classes.searchBar}>
+          <fieldset  className={clsx(classes.searchBar, "MuiPaper-elevation1",  "MuiPaper-rounded", "paper-looking-fieldset")}>
+            <legend className="paper-looking-fieldset-legend">Product Manager</legend>
             <Grid justify="flex-end" className={classes.formRoot} container spacing={3}>
               <Grid item xs={12} sm={5} lg={3}>
                 <TextField className={classes.shortInput} id="product-name" onChange={(e) => setCurrentProductName(e.target.value)} label="Product name" variant="outlined" size="small" />
@@ -145,7 +144,7 @@ export default function LogSales() {
                 </Button>
               </Grid>
             </Grid>
-          </Paper>
+          </fieldset>
         </Grid>
         <Grid item xs={12}>
           <Paper className={fixedHeightPaper}>

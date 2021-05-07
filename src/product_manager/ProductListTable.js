@@ -5,6 +5,8 @@ import ConfirmationDialog from './../shared/ConfirmationDialog'
 
 import { DataGrid } from '@material-ui/data-grid';
 
+import { vars } from './../theme/theme';
+
 export default function ProductListTable({ rowData, isLoading, categoriesList, deleteFunction }) {
   const columns= [
    // { field: "id", flex: 1, headerName: "Id" },
@@ -27,7 +29,7 @@ export default function ProductListTable({ rowData, isLoading, categoriesList, d
   return (
     <div style={{ display: 'flex', flexGrow: 1, width: "100%" }}>
       <div style={{ flexGrow: 1 }}>
-        <DataGrid rows={rowData} columns={columns} categoriesList={categoriesList} loading={isLoading}/>
+        <DataGrid rowHeight={vars.TABLE_ROW_HEIGHT} rows={rowData} columns={columns} categoriesList={categoriesList} loading={isLoading}/>
       </div>
     </div>
   );

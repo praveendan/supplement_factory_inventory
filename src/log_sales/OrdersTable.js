@@ -3,6 +3,7 @@ import IconButton from '@material-ui/core/IconButton';
 import DeleteIcon from '@material-ui/icons/Delete';
 
 import { DataGrid } from '@material-ui/data-grid';
+import { vars } from './../theme/theme';
 
 export default function OrdersTable({ saleItems, setSaleItems, isLoading, isEditable, removeItemFromLog, ...props }) {
   const columns = [
@@ -22,7 +23,7 @@ export default function OrdersTable({ saleItems, setSaleItems, isLoading, isEdit
   return (
     <div style={{ display: 'flex', flexGrow: 1, width: "100%" }}>
       <div style={{ flexGrow: 1 }}>
-        <DataGrid rows={saleItems} columns={columns} loading={isLoading}/>
+        <DataGrid rowHeight={vars.TABLE_ROW_HEIGHT} rows={saleItems} columns={columns} loading={isLoading}/>
       </div>
     </div>
   );

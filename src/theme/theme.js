@@ -16,8 +16,12 @@ export const theme = createMuiTheme({
     },
   },
   classes: {
-    fixedHeightPaper: 'calc(100vh - 315px)',
-    fixedHeightPaperMinHeight: 400,
+    fixedHeightPaper: 'calc(100vh - 240px)',
+    fixedHeightPaperMinHeight: 500,
     fixedHeightPaperToolBar: 70
   }
 });
+
+export const vars = {
+  TABLE_ROW_HEIGHT:25
+}

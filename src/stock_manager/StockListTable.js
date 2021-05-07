@@ -15,6 +15,7 @@ import FormControl from '@material-ui/core/FormControl';
 import Select from '@material-ui/core/Select';
 import MenuItem from '@material-ui/core/MenuItem';
 import InputLabel from '@material-ui/core/InputLabel';
+import { vars } from './../theme/theme';
 
 export default function StockListTable({ stocks, setStocks, isLoading }) {
   const [open, setOpen] = useState(false);
@@ -58,7 +59,7 @@ export default function StockListTable({ stocks, setStocks, isLoading }) {
     <>
       <div style={{ display: 'flex', flexGrow: 1, width: "100%" }}>
         <div style={{ flexGrow: 1 }}>
-          <DataGrid rows={stocks} columns={columns} loading={isLoading} />
+          <DataGrid rowHeight={vars.TABLE_ROW_HEIGHT} rows={stocks} columns={columns} loading={isLoading}/>
         </div>
       </div>
       <SetNoteModal open={open} setOpen={setOpen} currentItem={currentItem} setCurrentItem={setCurrentItem} stocks={stocks} setStocks={setStocks} />

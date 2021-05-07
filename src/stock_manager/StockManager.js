@@ -10,7 +10,6 @@ import FormControl from '@material-ui/core/FormControl';
 
 import { dbInstance, functions } from './../firebaseConfig';
 
-import Title from '../shared/Title';
 import StockListTable from './StockListTable';
 import Snackbar from './../shared/Notification';
 import DatePicker from '../shared/Datepicker'
@@ -219,10 +218,10 @@ export default function LogSales() {
 
   return (
     <>
-      <Title>Stock Manager</Title>
-      <Grid container spacing={3}>
+      <Grid container spacing={1}>
         <Grid item xs={12}>
-          <Paper className={classes.searchBar}>
+          <fieldset  className={clsx(classes.searchBar, "MuiPaper-elevation1",  "MuiPaper-rounded", "paper-looking-fieldset")}>
+            <legend className="paper-looking-fieldset-legend">Stock Manager</legend>
             <Grid justify="flex-end" className={classes.formRoot} container spacing={3}>
             <Grid item xs={12} sm={6} lg={3}>
                 <DatePicker className={classes.shortInput} currentDate={currentDate}
@@ -257,7 +256,7 @@ export default function LogSales() {
                 </FormControl>
               </Grid>
             </Grid>
-          </Paper>
+          </fieldset>
         </Grid>
         <Grid item xs={12}>
           <Paper className={fixedHeightPaper}>

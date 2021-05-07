@@ -4,6 +4,7 @@ import DeleteIcon from '@material-ui/icons/Delete';
 import ConfirmationDialog from './../shared/ConfirmationDialog'
 
 import { DataGrid } from '@material-ui/data-grid';
+import { vars } from './../theme/theme';
 
 export default function BranchListTable({ rowData, setBranches, isLoading, deleteFunction }) {
 
@@ -20,7 +21,7 @@ export default function BranchListTable({ rowData, setBranches, isLoading, delet
   return (
     <div style={{ display: 'flex', flexGrow: 1, width: "100%" }}>
       <div style={{ flexGrow: 1 }}>
-        <DataGrid rows={rowData} columns={columns} loading={isLoading}/>
+        <DataGrid rowHeight={vars.TABLE_ROW_HEIGHT} rows={rowData} columns={columns} loading={isLoading}/>
       </div>
     </div>
   );
