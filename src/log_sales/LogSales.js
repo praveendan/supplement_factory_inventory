@@ -234,7 +234,7 @@ export default function LogSales() {
         branch : currentBranch,
         date : currentDate,
         itemId : currentItem.itemCode,
-        numberOfSale : currentNumberOfItem,
+        numberOfSale :  currentReturnState? -currentNumberOfItem: currentNumberOfItem,
       }
   
       setIsSaving(true);
