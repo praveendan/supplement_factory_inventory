@@ -16,7 +16,16 @@ const generatePDF = (tickets, branch) => {
   const tableRows = [];
   
   tickets.sort((a, b) => {
-    return (b.numberOfItems+b.tempNumberUpdate) - (a.numberOfItems+a.tempNumberUpdate);
+    var nameA = a.categoryName.toUpperCase(); 
+    var nameB = b.categoryName.toUpperCase(); 
+    if (nameA < nameB) {
+      return -1;
+    }
+    if (nameA > nameB) {
+      return 1;
+    }
+
+    return 0;
   });
 
   // for each ticket pass all its data into an array
