@@ -55,6 +55,9 @@ const useStyles = makeStyles((theme) => ({
   },
   searchBar: {
     padding: theme.spacing(2),
+  },
+  downloadButton: { 
+    marginRight: theme.spacing(1),
   }
 }));
 
@@ -158,6 +161,8 @@ export default function LogSales() {
         console.log("Error getting document:", error);
         setIsLoading(false);
       });
+    } else {
+      setStocks([]);
     }
   },[currentStockBranch, currentDate]);
 
@@ -263,14 +268,15 @@ export default function LogSales() {
             <StockListTable stocks={stocks} setStocks={setStocks} isLoading={isLoading}/>
             <div className={classes.fixedHeightToolBar}>
             <Button
-              className="btn btn-primary"
-              color="primary"
+              variant="contained" 
+              color="secondary"
+              className={classes.downloadButton}
+              disabled={stocks.length === 0 }
               onClick={() => generatePDF(stocks,branchesObject[currentStockBranch].name)}
             >
               Download stocks
             </Button>
               <Button 
-                className={classes.shortInput} 
                 variant="contained" 
                 color="primary"
                 style={{width: '200px'}}
