@@ -69,7 +69,7 @@ export default function StockListTable({ stocks, setStocks, isLoading }) {
 
 const StockNumberMapper = (props) => {
   return props.row.tempNumberUpdate !== 0 ?
-    `${props.value + props.row.tempNumberUpdate} items (before: ${props.value}) ${props.row.isUpdated === true ? "Updated just now" : ""}`
+    `${props.value + props.row.tempNumberUpdate} items ${props.row.isUpdated === true ? "Updated just now" : ""}`
     : `${props.value} ${props.row.isUpdated === true ? "Updated just now" : ""}`
 }
 
