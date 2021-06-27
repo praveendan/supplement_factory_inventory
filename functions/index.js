@@ -4,6 +4,8 @@ admin.initializeApp();
 
 // // Create and Deploy Your First Cloud Functions
 // // https://firebase.google.com/docs/functions/write-firebase-functions
+// firebase projects:list  
+// firebase use sf-inventory-1
 // firebase deploy --only functions
 
 exports.createInventoryOnCreateBranch = functions.firestore
