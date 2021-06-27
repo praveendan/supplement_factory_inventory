@@ -38,6 +38,7 @@ const ActionCellRenderer = (props) => {
   const [open, setOpen] = React.useState(false);
 
   const removeItem = (id) => {
+    setOpen(false);
     var tempArray = props.saleItems.slice();
     let index = tempArray.findIndex((item) => item.id === id);
 
@@ -46,6 +47,7 @@ const ActionCellRenderer = (props) => {
   }
 
   const removeItemFromLog = async (id) => {
+    setOpen(false);
     let res = await props.removeItemFromLog(id);
     if (res === true) {
       removeItem(id)
