@@ -44,7 +44,7 @@ export default function DashaboardLayout({userLevel}) {
     <Router>
       <div className={classes.root}>
         <CssBaseline />
-        <Nav/>
+        <Nav userLevel={userLevel}/>
         <main className={classes.content}>
           <div className={classes.appBarSpacer} />
           <Container maxWidth="lg" className={classes.container}>

@@ -19,6 +19,7 @@ import ExpandMore from '@material-ui/icons/ExpandMore';
 import CreateIcon from '@material-ui/icons/Create';
 import { Link } from 'react-router-dom';
 import { makeStyles } from '@material-ui/core/styles';
+import { USER_ROLES } from './../util/constants';
 //import {theme} from './../theme/theme'
 
 const useStyles = makeStyles((theme) => ({
@@ -34,7 +35,7 @@ const useStyles = makeStyles((theme) => ({
   }
 }));
 
-export const MainListItems = () => {
+export const MainListItems = ({userLevel}) => {
   const classes = useStyles();
   const [openProductLogMenu, setOpenProductLogMenu] = React.useState(false);
   const [openProductMenu, setOpenProductMenu] = React.useState(false);
@@ -92,14 +93,16 @@ export const MainListItems = () => {
             <ListItemText primary="Manage stock" />
           </ListItem>
         </Link>
-        <Link className={classes.link} to="/dashboard/sync-stock">
-          <ListItem button>
-            <ListItemIcon>
-              <SyncIcon className={classes.linkIcon}/>
-            </ListItemIcon>
-            <ListItemText primary="Sync Stock" />
-          </ListItem>
-        </Link>
+        {userLevel === USER_ROLES.SUPER_ADMIN &&
+          <Link className={classes.link} to="/dashboard/sync-stock">
+            <ListItem button>
+              <ListItemIcon>
+                <SyncIcon className={classes.linkIcon}/>
+              </ListItemIcon>
+              <ListItemText primary="Sync Stock" />
+            </ListItem>
+          </Link>
+        }
         <Link className={classes.link} to="/dashboard/manage-branches">
           <ListItem button>
             <ListItemIcon>

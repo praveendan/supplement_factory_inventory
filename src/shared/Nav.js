@@ -95,7 +95,7 @@ const useStyles = makeStyles((theme) => ({
   },
 }));
 
-export default function Nav() {
+export default function Nav({userLevel}) {
   const classes = useStyles();
   
   const [open, setOpen] = React.useState(false);
@@ -152,7 +152,7 @@ export default function Nav() {
           </IconButton>
         </div>
         <Divider />
-        <MainListItems/>
+        <MainListItems userLevel={userLevel}/>
         <Divider />
         {/* <List>{secondaryListItems}</List> */}
       </Drawer>
