@@ -77,6 +77,7 @@ export default function StockSynchronizer() {
   const [ currentStock, setCurrentStock] = useState({});
 
   const [isMigrating, setIsMigrating] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
     const dbProductInstance = dbInstance.collection("products");
@@ -206,7 +207,7 @@ export default function StockSynchronizer() {
     setIsSaving(false);
   }
 
-  const migrateSalesToNewFormat = async() => {
+  /*const migrateSalesToNewFormat = async() => {
     let objArray = [];
     setIsMigrating(true);
     const snapshot = await dbSalesInstance.get();
@@ -242,7 +243,34 @@ export default function StockSynchronizer() {
         showNotificationMessage("error", e.message? e.message: "Error updating sales data");
       });
     }
-  }
+  }*/
+
+  // const deleteNewSales = async() => {
+  //   setDeleting(true);
+  //   const snapshot = await dbSalesInstance.get();
+
+  //   if(snapshot) {
+  //     let promisesArr = [];
+  //     snapshot.forEach(doc => {
+  //       const data = doc.data();
+  //       if(data.readable_date){
+  //         promisesArr.push(dbSalesInstance.doc(doc.id).delete());
+  //       }
+  //     });
+
+  //     Promise.all(promisesArr)
+  //     .then((values) => {
+  //       console.log(values);
+  //       setIsMigrating(false);
+  //       showNotificationMessage("success", "Sales deleted successfully");
+  //       setDeleting(false);
+  //     })
+  //     .catch(e => {
+  //       showNotificationMessage("error", e.message? e.message: "Error deleting sales data");
+  //       setDeleting(false);
+  //     });
+  //   }
+  // }
 
   const showNotificationMessage = (severety, message) => {
     setNotification(message);
@@ -296,7 +324,7 @@ export default function StockSynchronizer() {
               >
                 {isSaving ? "Syncing..." : "Sync"}
               </Button>
-              <Button
+              {/* <Button
                 variant="contained"
                 color="primary"
                 style={{ width: '200px' }}
@@ -304,7 +332,14 @@ export default function StockSynchronizer() {
                 disabled={isMigrating}
               >
                 {isMigrating ? "Migrating..." : "Migrate"}
-              </Button>
+              </Button> */}
+              {/* <Button
+                variant="contained"
+                color="primary"
+                style={{ width: '200px' }}
+                onClick={deleteNewSales}>
+                {deleting? "deleting": "Delete New Sales"}
+              </Button> */}
             </div>
           </Paper>
         </Grid>
