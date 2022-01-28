@@ -11,6 +11,7 @@ import BallotIcon from '@material-ui/icons/Ballot';
 import AssignmentIcon from '@material-ui/icons/Assignment';
 import MonetizationOnIcon from '@material-ui/icons/MonetizationOn';
 import HistoryIcon from '@material-ui/icons/History';
+import SyncIcon from '@material-ui/icons/Sync';
 import List from '@material-ui/core/List';
 import Collapse from '@material-ui/core/Collapse';
 import ExpandLess from '@material-ui/icons/ExpandLess';
@@ -89,6 +90,14 @@ export const MainListItems = () => {
               <CreateIcon className={classes.linkIcon}/>
             </ListItemIcon>
             <ListItemText primary="Manage stock" />
+          </ListItem>
+        </Link>
+        <Link className={classes.link} to="/dashboard/sync-stock">
+          <ListItem button>
+            <ListItemIcon>
+              <SyncIcon className={classes.linkIcon}/>
+            </ListItemIcon>
+            <ListItemText primary="Sync Stock" />
           </ListItem>
         </Link>
         <Link className={classes.link} to="/dashboard/manage-branches">

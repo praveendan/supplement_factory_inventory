@@ -81,386 +81,306 @@ exports.updateInventoryOnDeleteProduct = functions.firestore
     });
   });
 
-// Saves the sale log
-exports.updateSaleLog = functions.https.onCall((data, context) => {
-  if (!context.auth) return {status: 'error', code: 401, message: 'Not signed in'}
-  const branch = data.branch;
-  const date = data.date;
+//SF inventory V 1.1 hotfix to database update bug
+/*triggering Inventory update when inventory update snapshot is saved
+*/
+/* optimized version */
+exports.updateInventoryOnInventoryUpdateSnapshotUpdate = functions.firestore
+  .document('inventory_update_snapshots/{snapId}')
+  .onWrite(async (change, _context) => {
+    const dbInventoryInstance = admin.firestore().collection("inventory");
 
-  myDate = date.split("-");
-  var newDate = new Date( myDate[0], myDate[1] - 1, myDate[2]);
+    const document = change.after.exists ? change.after.data() : null;
+    const prevDoc = change.before.exists ? change.before.data() : null;
 
-  let logSnapshot = {} 
-  logSnapshot[branch] = data.recordItems;
-  logSnapshot.date = newDate.getTime();
+    const currentStockBranch = document? document.branch : prevDoc.branch;
+    const currentStockDate = document? document.date : prevDoc.date;
 
-  return admin.firestore().collection("sales").doc(date).set(logSnapshot, { merge: true })
-  .then(() => {
-    console.log(`Log ${date}-${branch} successfully written!`);
-    return admin.firestore().collection("inventory").doc(branch).get()
-    .then((doc) => {
-      if (doc.exists) {
-        let documentData = doc.data();
-        Object.keys(data.recordItems).forEach((itemKey) => {
-          if(documentData[itemKey]){
-            documentData[itemKey] -= data.recordItems[itemKey];
-          } else {
-            documentData[itemKey] = -data.recordItems[itemKey];
-          }
+
+    const dbInventorySnap = await dbInventoryInstance
+    .doc(currentStockBranch)
+    .get();
+
+    var inventoryData = dbInventorySnap.data();
+
+    if(prevDoc) {
+      Object.keys(prevDoc.save_snapshot).forEach(key => {
+        inventoryData[key] = inventoryData[key]? inventoryData[key] - prevDoc.save_snapshot[key].amount : -prevDoc.save_snapshot[key].amount;
+      });
+    }
+
+    if(document) {
+      Object.keys(document.save_snapshot).forEach(key => {
+        inventoryData[key] = inventoryData[key]? inventoryData[key] + document.save_snapshot[key].amount : document.save_snapshot[key].amount;
+      });
+    }
+
+    
+    dbInventoryInstance
+    .doc(currentStockBranch)
+    .set(inventoryData, { merge: true })
+    .then(_ => {
+      functions.logger.log("Updated the DB on stock update for :", {currentStockBranch , currentStockDate});
+    })
+    .catch(e => {
+      functions.logger.error("Failed updating the DB  on stock update for :", {currentStockBranch , currentStockDate});
+    })
+
+    return null;
+  });
+
+/* original */
+/*
+exports.updateInventoryOnInventoryUpdateSnapshotUpdate = functions.firestore
+  .document('inventory_update_snapshots/{snapId}')
+  .onWrite(async (change, _context) => {
+
+    const dbInventoryUpdateInstance = admin.firestore().collection("inventory_update_snapshots");
+    const dbSalesInstance = admin.firestore().collection("sales");
+    const dbProductInstance = admin.firestore().collection("products");
+    const dbInventoryInstance = admin.firestore().collection("inventory");
+
+    const document = change.after.exists ? change.after.data() : change.before.data();
+    
+    const currentStockBranch = document.branch;
+    const currentStockDate = document.date;
+    
+    const dbProductsSnap = await dbProductInstance.get();
+
+    var productsList = [];
+    let inventoryUpdates = [];
+    let sales = [];
+
+    if(dbProductsSnap) {
+      var productsListArray = [];
+      dbProductsSnap.forEach((doc) => {
+
+        productsListArray.push({
+          id: doc.id
         });
+      });
 
-        return admin.firestore().collection("inventory").doc(branch).update(documentData)
-          .then(() => {
-            console.log(`Inventory update ${branch} successful`);
-            // Returning the sanitized message to the client.
-            return { status: "SUCCESS" };
-          })
-          .catch((error) => {
-            console.log(`Inventory update ${branch} unsuccessful`, error);
-            return { 
-              status: "FAILURE",
-              message: "Error in updating the inventory"
-            };
-          });
-      } else {
-          // doc.data() will be undefined in this case
-          console.log(`No such branch ${branch} in update`);
-          return { 
-            status: "FAILURE",
-            message: "No such branch in the inventory to update"
-          };
-      }
-    }).catch((error) => {
-        console.log("Error getting document in update:", error);
-        return { 
-          status: "FAILURE",
-          message: "Error retrieving the branch to update the inventory"
-        };
+      productsList = productsListArray;
+    }
+
+    const inventorySnapshot = await dbInventoryUpdateInstance
+      .where("branch", "==", currentStockBranch)
+      .get();
+
+    if(inventorySnapshot) {
+      let updateArray = [];
+      inventorySnapshot.forEach(doc => {
+        const data = doc.data();
+        updateArray.push(data);
+      });
+      inventoryUpdates = updateArray;
+    }
+
+    const salesSnap = await dbSalesInstance
+    .where("branch", "==", currentStockBranch)
+    .get()
+
+    if(salesSnap){
+      let salesArray = [];
+
+      salesSnap.forEach(doc => {
+        const data = doc.data();
+        salesArray.push(data);
+      });
+      
+      sales = salesArray;
+    }
+
+    var inventoryValues = {};
+
+    productsList.forEach(prod => {
+      var salesNumber = 0;
+      var stockIn = 0;
+      const productId = prod.id;
+      
+      inventoryUpdates.forEach(inventoryUpdate => {
+        const inventoryUpdateSnapshot = inventoryUpdate['save_snapshot'];
+
+        if(inventoryUpdateSnapshot[productId]) {
+          stockIn += inventoryUpdateSnapshot[productId].amount;
+        }
+      })
+
+      sales.forEach(sale => {
+        if(sale[productId]) {
+          salesNumber += sale[productId];
+        }
+      });
+
+      inventoryValues[prod.id] = stockIn - salesNumber
     });
-  })
-  .catch((error) => {
-    console.error(`Error writing document ${date}-${branch}: `, error);
-    return { 
-      status: "FAILURE",
-      message: "Error writing log"
-    };
-  });  
-});
 
-// deletes the sale log
-exports.deleteSaleLog = functions.https.onCall((data, context) => {
-  if (!context.auth) return {status: 'error', code: 401, message: 'Not signed in'}
-  const branch = data.branch;
-  const date = data.date;
+    dbInventoryInstance
+    .doc(currentStockBranch)
+    .set(inventoryValues, { merge: true })
+    .then(_ => {
+      functions.logger.log("Updated the DB on update snapshot for :", {currentStockBranch , currentStockDate});
+    })
+    .catch(e => {
+      functions.logger.error("Failed updating the DB on update snapshot for :", {currentStockBranch , currentStockDate});
+    })
 
-  return admin.firestore().collection("sales").doc(date).get()
-  .then((doc) => {
-    if(doc.exists){
-      let documentData = doc.data();
-      delete documentData[branch]
-      const dbUpdate = doc.data()[branch];
+    return null;
+  });
+*/
 
-      return admin.firestore().collection("inventory").doc(branch).get()
-      .then((branchDoc) => {
-        if (branchDoc.exists) {
-          let branchDocumentData = branchDoc.data();
-          Object.keys(dbUpdate).forEach((itemKey) => {
-            if(branchDocumentData[itemKey]){
-              branchDocumentData[itemKey] += dbUpdate[itemKey];
-            } else {
-              branchDocumentData[itemKey] = dbUpdate[itemKey];
-            }
-          });
-  
-          return admin.firestore().collection("inventory").doc(branch).update(branchDocumentData)
-            .then(() => {
-              console.log(`Inventory update of deletion ${branch} successful`);
+/* triggers when the sales are recorded
+* will need different approach for this as db design has flaws
+*/
 
-              return admin.firestore().collection("sales").doc(date).set(documentData)
-              .then(()=> {
-                return { status: "SUCCESS" };
-              })
-              .catch((e) => {
-                return { 
-                  status: "FAILURE",
-                  message: "Error in deleting the sale record"
-                };
-              })              
-            })
-            .catch((error) => {
-              console.log(`Inventory update of deletion ${branch} unsuccessful`, error);
-              return { 
-                status: "FAILURE",
-                message: "Error in updating the inventory"
-              };
-            });
-        } else {
-          // doc.data() will be undefined in this case
-          console.log(`No such branch ${branch} to update deletion`);
-          return { 
-            status: "FAILURE",
-            message: "No such branch in the inventory to update deletion"
-          };
-        }
-      }).catch((error) => {
-          console.log("Error getting document in update deletion:", error);
-          return { 
-            status: "FAILURE",
-            message: "Error retrieving the branch to update the inventory deletion"
-          };
-      });
-    } else {
-      return { 
-        status: "FAILURE",
-        message: "Error retrieving the log to update"
-      };
+/* optimized version */
+exports.updateInventoryOnSalesUpdate = functions.firestore
+  .document('sales/{saleId}')
+  .onWrite(async (change, _) => {
+    const dbInventoryInstance = admin.firestore().collection("inventory");
+
+    const document = change.after.exists ? change.after.data() : null;
+    const prevDoc = change.before.exists ? change.before.data() : null;
+
+    const currentStockBranch = document? document.branch : prevDoc.branch;
+    const currentStockDate = document? document.readable_date : prevDoc.readable_date;
+
+
+    const dbInventorySnap = await dbInventoryInstance
+    .doc(currentStockBranch)
+    .get();
+
+    var inventoryData = dbInventorySnap.data();
+
+    const checkSalesSnapKey = (key) => {
+      return (key !== "branch" && key !== "date" && key !== "readable_date");
     }
-  })
-  .catch((error) => {
-    return { 
-      status: "FAILURE",
-      message: "Critical error in retrieving the log to update"
-    };
-  })
-});
 
-//deletes one item from the sale log
-exports.deleteSaleLogItem = functions.https.onCall((data, context) => {
-  if (!context.auth) return {status: 'error', code: 401, message: 'Not signed in'}
-  const branch = data.branch;
-  const date = data.date;
-  const itemId = data.id;
-
-  return admin.firestore().collection("sales").doc(date).get()
-  .then((doc) => {
-    if(doc.exists){
-      let documentData = doc.data();
-      let numberOfSale = documentData[branch][itemId];
-
-      delete documentData[branch][itemId]
-
-      return admin.firestore().collection("inventory").doc(branch).get()
-      .then((branchDoc) => {
-        if (branchDoc.exists) {
-          let branchDocumentData = branchDoc.data();
-
-          if(branchDocumentData[itemId]){
-            branchDocumentData[itemId] += numberOfSale;
-          } else {
-            branchDocumentData[itemId] = numberOfSale;
-          } 
-          return admin.firestore().collection("inventory").doc(branch).update(branchDocumentData)
-            .then(() => {
-              console.log(`Inventory update of deletion ${branch}-${itemId} successful`);
-              return admin.firestore().collection("sales").doc(date).set(documentData)
-              .then(()=> {
-                return { status: "SUCCESS" };
-              })
-              .catch((e) => {
-                return { 
-                  status: "FAILURE",
-                  message: "Error in updating the sale record"
-                };
-              })              
-            })
-            .catch((error) => {
-              console.log(`Inventory update of deletion ${branch}-${itemId} unsuccessful`, error);
-              return { 
-                status: "FAILURE",
-                message: "Error in updating the inventory"
-              };
-            });
-        } else {
-          // doc.data() will be undefined in this case
-          console.log(`No such branch ${branch} to update deletion`);
-          return { 
-            status: "FAILURE",
-            message: "No such branch in the inventory to update deletion"
-          };
+    if(prevDoc) {
+      Object.keys(prevDoc).forEach(key => {
+        if(checkSalesSnapKey(key)) { 
+          inventoryData[key] = inventoryData[key]? inventoryData[key] + prevDoc[key] : prevDoc[key];
         }
-      }).catch((error) => {
-          console.log("Error getting document in update:", error);
-          return { 
-            status: "FAILURE",
-            message: "Error retrieving the branch to update the inventory update"
-          };
       });
-    } else {
-      return { 
-        status: "FAILURE",
-        message: "Error retrieving the log to update"
-      };
     }
-  })
-  .catch((error) => {
-    return { 
-      status: "FAILURE",
-      message: "Critical error in retrieving the log to update"
-    };
-  })
-});
 
-//for update a sale record
-exports.addSaleLogItem = functions.https.onCall((data, context) => {
-  if (!context.auth) return {status: 'error', code: 401, message: 'Not signed in'}
-  const branch = data.branch;
-  const date = data.date;
-  const itemId = data.itemId;
-  const numberOfSale = data.numberOfSale;
-
-  return admin.firestore().collection("sales").doc(date).get()
-  .then((doc) => {
-    if(doc.exists){
-      let documentData = doc.data();
-      if(documentData[branch]){
-        documentData[branch][itemId] = numberOfSale;
-      } else {
-        documentData[branch] = {};
-        documentData[branch][itemId] = numberOfSale;
-      }
-        
-
-      return admin.firestore().collection("inventory").doc(branch).get()
-      .then((branchDoc) => {
-        if (branchDoc.exists) {
-          let branchDocumentData = branchDoc.data();
-
-          if(branchDocumentData[itemId]){
-            branchDocumentData[itemId] -= numberOfSale;
-          } else {
-            branchDocumentData[itemId] = -numberOfSale;
-          } 
-          return admin.firestore().collection("inventory").doc(branch).update(branchDocumentData)
-            .then(() => {
-              console.log(`Inventory update of ${branch}-${itemId} successful`);
-              return admin.firestore().collection("sales").doc(date).set(documentData)
-              .then(()=> {
-                return { status: "SUCCESS" };
-              })
-              .catch((e) => {
-                return { 
-                  status: "FAILURE",
-                  message: "Error in updating the sale record"
-                };
-              })              
-            })
-            .catch((error) => {
-              console.log(`Inventory update of deletion ${branch}-${itemId} unsuccessful`, error);
-              return { 
-                status: "FAILURE",
-                message: "Error in updating the inventory"
-              };
-            });
-        } else {
-          // doc.data() will be undefined in this case
-          console.log(`No such branch ${branch} to update deletion`);
-          return { 
-            status: "FAILURE",
-            message: "No such branch in the inventory to update deletion"
-          };
+    if(document) {
+      Object.keys(document).forEach(key => {
+        if(checkSalesSnapKey(key)) {
+          inventoryData[key] = inventoryData[key]? inventoryData[key] - document[key] : -document[key];
         }
-      }).catch((error) => {
-          console.log("Error getting document in update:", error);
-          return { 
-            status: "FAILURE",
-            message: "Error retrieving the branch to update the inventory update"
-          };
       });
-    } else {
-      return { 
-        status: "FAILURE",
-        message: "Error retrieving the log to update"
-      };
     }
-  })
-  .catch((error) => {
-    return { 
-      status: "FAILURE",
-      message: "Critical error in retrieving the log to update"
-    };
-  })
+    
+    dbInventoryInstance
+    .doc(currentStockBranch)
+    .set(inventoryData, { merge: true })
+    .then(_ => {
+      functions.logger.log("Updated the DB on sale for :", {currentStockBranch , currentStockDate});
+    })
+    .catch(e => {
+      functions.logger.error("Failed updating the DB on sale for :", {currentStockBranch , currentStockDate});
+    })
 
-});
+    return null;
+  });
 
-exports.updateInventory = functions.https.onCall(async (data, context) => {
-  if (!context.auth) return {status: 'error', code: 401, message: 'Not signed in'}
-  const branch = data.branch;
-  let stocksUpdateObject = data.stocksUpdateObject;
-  let inventoryUpdateSnapshot = data.inventoryUpdateSnapshot;
-  const promises = [];
+/* original version */
+/*
+exports.updateInventoryOnSalesUpdate = functions.firestore
+  .document('sales/{saleId}')
+  .onWrite(async (change, context) => {
 
-  const inventoryUpdateSnapshotCollection = admin.firestore().collection("inventory_update_snapshots");
-  const inventoryCollection = admin.firestore().collection("inventory");
+    const dbInventoryUpdateInstance = admin.firestore().collection("inventory_update_snapshots");
+    const dbSalesInstance = admin.firestore().collection("sales");
+    const dbProductInstance = admin.firestore().collection("products");
+    const dbInventoryInstance = admin.firestore().collection("inventory");
 
-  promises.push(inventoryUpdateSnapshotCollection
-  .where("date", "==", inventoryUpdateSnapshot.date)
-  .where("branch", "==", branch)
-  .limit(1)
-  .get()
-  .then((querySnapshot) => {
-    if (!querySnapshot.empty) {
-      const snapShotId = querySnapshot.docs[0].id;
-      return inventoryUpdateSnapshotCollection.doc(snapShotId).set(inventoryUpdateSnapshot)
-      .then(() => {
-        console.log(`${branch}-${inventoryUpdateSnapshot.date} written`);
-        return { 
-          status: "SUCCESS",
-          message: "Inventory log updated successfully" 
-        };
+    const document = change.after.exists ? change.after.data() : null;
+    const prevDoc = change.before.data();
+
+    const currentStockBranch =  document? document.branch: prevDoc.branch;
+    const currentStockDate = document? document.readable_date: prevDoc.readable_date;
+
+    var productsList = [];
+    let inventoryUpdates = [];
+    let sales = [];
+    
+    const dbProductsSnap = await dbProductInstance
+    .get();
+    
+    if(dbProductsSnap) {
+      var productsListArray = [];
+      dbProductsSnap.forEach((doc) => {
+
+        productsListArray.push({
+          id: doc.id
+        });
+      });
+
+      productsList = productsListArray;
+    }
+
+    const inventorySnapshot = await dbInventoryUpdateInstance
+      .where("branch", "==", currentStockBranch)
+      .get();
+
+    if(inventorySnapshot) {
+      let updateArray = [];
+      inventorySnapshot.forEach(doc => {
+        const data = doc.data();
+        updateArray.push(data);
+      });
+      inventoryUpdates = updateArray;
+    }
+
+    const salesSnap = await dbSalesInstance
+      .where("branch", "==", currentStockBranch)
+      .get()
+
+    if(salesSnap){
+      let salesArray = [];
+      salesSnap.forEach(doc => {
+        const data = doc.data();
+        salesArray.push(data);
+      });
+      sales = salesArray;
+    }
+
+    var inventoryValues = {};
+
+    productsList.forEach(prod => {
+      var salesNumber = 0;
+      var stockIn = 0;
+      const productId = prod.id;
+      
+      inventoryUpdates.forEach(inventoryUpdate => {
+        const inventoryUpdateSnapshot = inventoryUpdate['save_snapshot'];
+
+        if(inventoryUpdateSnapshot[productId]) {
+          stockIn += inventoryUpdateSnapshot[productId].amount;
+        }
       })
-      .catch((error) => {
-        console.error(`${branch}-${inventoryUpdateSnapshot.date} not written`, error);
-        return { 
-          status: "FAILURE",
-          message: "Error updating log"
-        };
+
+      sales.forEach(sale => {
+        if(sale[productId]) {
+          salesNumber += sale[productId];
+        }
       });
-    } else {
-      return inventoryUpdateSnapshotCollection.add(inventoryUpdateSnapshot)
-      .then(() => {
-        console.log(`${branch}-${inventoryUpdateSnapshot.date} added`);
-        return { 
-          status: "SUCCESS",
-          message: "Inventory log added successfully" 
-        };
-      })
-      .catch((error) => {
-        console.error(`${branch}-${inventoryUpdateSnapshot.date} not added`, error);
-        return { 
-          status: "FAILURE",
-          message: "Error adding log"
-        };
-      });
-    }
-  })
-  .catch((error) => {
-    console.log("Error getting documents: ", error);
-    return { 
-      status: "FAILURE",
-      message: "Error getting log"
-    };
-  }));
 
-  promises.push(inventoryCollection.doc(branch).set(stocksUpdateObject)
-  .then(() => {
-    console.log(`${branch}-${inventoryUpdateSnapshot.date} branch update written`);
-    return { 
-      status: "SUCCESS",
-      message: "Inventory updated successfully" 
-    };
-  })
-  .catch((error) => {
-    console.error(`${branch}-${inventoryUpdateSnapshot.date} branch update not written`, error);
-    return { 
-      status: "FAILURE",
-      message: "Error writing inventory"
-    };
-  }));
+      inventoryValues[prod.id] = stockIn - salesNumber
+    });
 
-  const [inventoryUpdateLogStatus, inventoryUpdateStatus] = await Promise.all(promises);
-  return {
-    status: "SUCCESS",
-    messages: [inventoryUpdateLogStatus.message, inventoryUpdateStatus.message]
-  }
-});
+    dbInventoryInstance
+    .doc(currentStockBranch)
+    .set(inventoryValues, { merge: true })
+    .then(_ => {
+      functions.logger.log("Updated the DB on sale for :", {currentStockBranch , currentStockDate});
+    })
+    .catch(e => {
+      functions.logger.error("Failed updating the DB on sale for :", {currentStockBranch , currentStockDate});
+    })
 
+    return null;
+  });
+  */

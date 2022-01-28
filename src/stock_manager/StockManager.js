@@ -8,7 +8,7 @@ import Select from '@material-ui/core/Select';
 import InputLabel from '@material-ui/core/InputLabel';
 import FormControl from '@material-ui/core/FormControl';
 
-import { dbInstance, functions } from './../firebaseConfig';
+import { dbInstance } from './../firebaseConfig';
 
 import StockListTable from './StockListTable';
 import Snackbar from './../shared/Notification';
@@ -193,31 +193,41 @@ export default function LogSales() {
         save_snapshot:updateSnapshot
       };
 
-      let data = {
-        branch : currentStockBranch,
-        stocksUpdateObject,
-        inventoryUpdateSnapshot
-      }
-
-      var addLog = functions.httpsCallable('updateInventory');
-      addLog(data)
-      .then((result) => {
-        // Read result of the Cloud Function.
-        if(result.data.status === "SUCCESS"){
-          setIsSaveButtonDisabled(false);
-          setIsSaving(false);
-          showNotificationMessage("success", "Saved the log and updated inventory successfully.")
-        } else {
-          showNotificationMessage("error", result.data.message? result.data.message : "Error saving data.")
-        }
-        
-      })
-      .catch((error) => {
-        var code = error.code;
-        var message = error.message;
-        setIsSaving(false);
-        showNotificationMessage("error", `Error: ${message} Code: ${code}`)
-      });
+      dbInventoryUpdateInstance
+        .where("date", "==", inventoryUpdateSnapshot.date)
+        .where("branch", "==", currentStockBranch)
+        .limit(1)
+        .get()
+        .then(async (querySnapshot) => {
+          if (!querySnapshot.empty) {
+            const snapShotId = querySnapshot.docs[0].id;
+            try {
+              await dbInventoryUpdateInstance.doc(snapShotId).set(inventoryUpdateSnapshot);
+              console.log(`${currentStockBranch}-${inventoryUpdateSnapshot.date} written`);
+              showNotificationMessage("success", "Saved the log and updated inventory successfully.");
+              setIsSaveButtonDisabled(false);
+              setIsSaving(false);
+            } catch (error) {
+              console.error(`${currentStockBranch}-${inventoryUpdateSnapshot.date} not written`, error);
+              showNotificationMessage("error", error.message? error.message : "Error saving data.");
+            }
+          } else {
+            try {
+              await dbInventoryUpdateInstance.add(inventoryUpdateSnapshot);
+              console.log(`${currentStockBranch}-${inventoryUpdateSnapshot.date} added`);
+              showNotificationMessage("success", "Saved the log and updated inventory successfully.");
+              setIsSaveButtonDisabled(false);
+              setIsSaving(false);
+            } catch (error) {
+              console.error(`${currentStockBranch}-${inventoryUpdateSnapshot.date} not added`, error);
+              showNotificationMessage("error", error.message? error.message : "Error saving data.")
+            }
+          }
+        })
+        .catch((error) => {
+          console.log("Error getting documents: ", error);
+          showNotificationMessage("error", error.message? error.message : "Error getting documents")
+        });
     }
   }
 

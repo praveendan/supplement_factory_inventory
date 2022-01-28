@@ -63,11 +63,11 @@ const ActionCellRenderer = (props) => {
           <DeleteIcon />
         </IconButton>
         <ConfirmationDialog
-          label="Are you sure you want to remove the item from list?"
+          label="remove the item from list?"
           open={open}
           onConfirm={() => removeItem(props.row.id)}
           onClose={() => setOpen(false)}
-          value={"dummy val"}
+          value={"dummy val1"}
         />
       </React.Fragment>
 
@@ -79,11 +79,11 @@ const ActionCellRenderer = (props) => {
           <DeleteIcon />
         </IconButton>
         <ConfirmationDialog
-          label="Are you sure you want to remove the item from list?"
+          label="remove the item from list?"
           open={open}
           onConfirm={() => removeItemFromLog(props.row.id)}
           onClose={() => setOpen(false)}
-          value={"dummy val"}
+          value={"dummy val2"}
         />
       </React.Fragment>
     )

@@ -1,7 +1,7 @@
 
 import React, { useEffect, useState } from 'react';
 import './App.css';
-import { auth } from './firebaseConfig'
+import { auth, dbInstance } from './firebaseConfig'
 import Backdrop from '@material-ui/core/Backdrop';
 import CircularProgress from '@material-ui/core/CircularProgress';
 import { makeStyles, ThemeProvider } from '@material-ui/core/styles';
@@ -30,26 +30,22 @@ export default function App() {
   const classes = useStyles();
   const [user, setUser] = useState(auth.currentUser);
   const [isLoading, setIsLoading] = useState(true);
-
-  // auth.onAuthStateChanged(function(user) {
-  //   if (user) {
-  //     // User is signed in.
-  //   } else {
-  //     // No user is signed in.
-  //   }
-  // });
-
-  // auth.onAuthStateChanged((user) => {
-  //   if (user) {
-  //     setUser(user)
-  //   } 
-  // });
-
+  const [userLevel, setUserLevel] = useState(null);
    // Listen to the Firebase Auth state and set the local state.
-   useEffect(() => {
+  useEffect(() => {
     const unregisterAuthObserver = auth.onAuthStateChanged((user) => {
       if (user) {
         setUser(user);
+        dbInstance.collection("users")
+        .where("uid", "==", user.uid)
+        .limit(1)
+        .get()
+        .then((querySnapshot) => {
+          if (!querySnapshot.empty) {
+            const role = querySnapshot.docs[0].data().role;
+            setUserLevel(role);
+          }
+        });
       }
       setIsLoading(false);
     });
@@ -67,7 +63,7 @@ export default function App() {
           </Route>
           <PrivateRoute path='/dashboard' user={user}>
             <ReferenceDataContextProvider>
-              <DashboardLayout />
+              <DashboardLayout userLevel={userLevel}/>
             </ReferenceDataContextProvider>
           </PrivateRoute>
           <PrivateRoute path='/' user={user}>

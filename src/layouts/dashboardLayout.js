@@ -17,7 +17,9 @@ import CategoryManager from './../category_manager/CategoryManager';
 import ProductManager from './../product_manager/ProductManager';
 import StockManager from './../stock_manager/StockManager';
 import NoMatch from './../404';
-import Copyright from './../shared/Copyright'
+import Copyright from './../shared/Copyright';
+import StockSynchronizer from '../stock_synchronizer/StockSynchronizer'
+import { USER_ROLES } from '../util/constants';
 
 const useStyles = makeStyles((theme) => ({
   root: {
@@ -35,9 +37,9 @@ const useStyles = makeStyles((theme) => ({
   },
 }));
 
-export default function DashaboardLayout() {
+export default function DashaboardLayout({userLevel}) {
   const classes = useStyles();
-
+  
   return (
     <Router>
       <div className={classes.root}>
@@ -54,6 +56,7 @@ export default function DashaboardLayout() {
               <Route path="/dashboard/manage-products" exact component={ProductManager}/>
               <Route path="/dashboard/manage-categories" exact component={CategoryManager}/>
               <Route path="/dashboard/manage-stock" exact component={StockManager}/>
+              {userLevel === USER_ROLES.SUPER_ADMIN && <Route path="/dashboard/sync-stock" exact component={StockSynchronizer}/>}
               <Route path="*" component={ NoMatch } />
             </Switch>
             <Box pt={4}>

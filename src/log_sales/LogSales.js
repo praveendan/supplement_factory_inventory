@@ -10,7 +10,8 @@ import InputLabel from '@material-ui/core/InputLabel';
 import FormControl from '@material-ui/core/FormControl';
 import ConfirmationDialog from './../shared/ConfirmationDialog'
 
-import { dbInstance, functions } from './../firebaseConfig';
+import firebase from './../firebaseConfig';
+import { dbInstance } from './../firebaseConfig';
 
 import DatePicker from '../shared/Datepicker'
 import Orders from './OrdersTable';
@@ -85,6 +86,8 @@ export default function LogSales() {
   const [open, setOpen] = useState(false);
   const [delOpen, setDelOpen] = useState(false);
 
+  const [currentDoc, setCurrentDoc] = useState("");
+
   useEffect(() => {
     const dbProductInstance = dbInstance.collection("products");
 
@@ -109,45 +112,50 @@ export default function LogSales() {
     if(currentDate && currentDate !== "" && currentBranch && currentBranch !== "") {
       setIsLoading(true);
       setIsEditable(true);
-      dbSalesInstance.doc(currentDate).get()
-      .then((doc) => {
-        if (doc.exists) {
-          var tempArray = [];
-          let dataObject = doc.data()[currentBranch];
 
-          if(dataObject){
-            Object.keys(dataObject).forEach(d => {
-              tempArray.push({
-                id: d,
-                saleDate: currentDate,
-                saleBranch: currentBranch,
-                saleItem: productsObject[d]? productsObject[d].name: "Not available",
-                saleNumberOfItems: dataObject[d],
-                saleIsReturn: dataObject[d] < 0? true: false,
-                itemCode: d
-              });         
-            });
-            setIsEditable(false);
-          } else {
-            setIsEditable(true);
-          }
-                
-          setSaleItems(tempArray);
-          setIsLoading(false);
-        } else {
-          setIsEditable(true);  
-          setSaleItems([])
-          setIsLoading(false);
-        }   
+      dbSalesInstance
+      .where("branch", "==", currentBranch)
+      .where("readable_date", "==", currentDate)
+      .limit(1)
+      .get()
+      .then((querySnapshot) => {
+        var tempArray = [];
+        querySnapshot.forEach((doc) => {
+          
+          setCurrentDoc(doc.id);
+          let dataObject = doc.data();
+
+          Object.keys(dataObject).forEach(d => {
+            if(d !== 'date' &&
+              d !== 'readable_date' &&
+              d !== 'branch'){
+                tempArray.push({
+                  id: d,
+                  saleDate: currentDate,
+                  saleBranch: currentBranch,
+                  saleItem: productsObject[d]? productsObject[d].name: "Not available",
+                  saleNumberOfItems: dataObject[d],
+                  saleIsReturn: dataObject[d] < 0? true: false,
+                  itemCode: d
+                });    
+              }
+                 
+          });
+          setIsEditable(false);
+        });
+        setSaleItems(tempArray);
+        setIsLoading(false);
       })
       .catch((error) => {
+        console.log("Error getting documents: ", error);
+
         console.log("Error retrieving data: ", error);
         showNotificationMessage("error", "Error retrieving data. Please try again later.")
         setSaleItems([]);
-        setIsLoading(false);
         setIsEditable(false)
       });
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   },[currentDate, currentBranch])
 
   const showNotificationMessage = (severety, message) => {
@@ -156,10 +164,14 @@ export default function LogSales() {
     setNotificationSeverity(severety);
   }
 
+  /* * if uneditable,  that means there is a record for that brnach and data
+  * then it will update the db and the frontendArray on the fly
+  * if not, it will update as a batch
+  * */
   const addItemToList = async() => {
     var tempArray = saleItems.slice();
+    const found = tempArray.findIndex(element => element.itemCode === currentItem.itemCode);
     if(isEditable){
-      const found = tempArray.findIndex(element => element.itemCode === currentItem.itemCode);
       //to update the array
       if(-1 === found){ 
         tempArray.push({
@@ -181,9 +193,17 @@ export default function LogSales() {
           tempArray.splice(found, 1);
         }          
       }
+      setSaleItems(tempArray);
     } else {
-      let res = await addItemFromLog();
-      if(res === true) {
+      setIsSaving(true);
+
+      var update = {};
+
+      if(-1 === found){ 
+        update = {
+          [currentItem.itemCode]: currentReturnState ? - currentNumberOfItem : currentNumberOfItem,
+        };
+
         tempArray.push({
           id: currentItem.itemCode,
           saleDate: currentDate,
@@ -193,73 +213,58 @@ export default function LogSales() {
           saleIsReturn: currentReturnState,
           itemCode: currentItem.itemCode
         });
+
+      } else {
+        if(currentReturnState) {
+          update = {
+            [currentItem.itemCode]: tempArray[found].saleNumberOfItems - currentNumberOfItem
+          }
+          tempArray[found].saleNumberOfItems = tempArray[found].saleNumberOfItems - currentNumberOfItem;
+        } else {
+          update = {
+            [currentItem.itemCode]: tempArray[found].saleNumberOfItems + currentNumberOfItem
+          }
+          tempArray[found].saleNumberOfItems = tempArray[found].saleNumberOfItems + currentNumberOfItem;
+        }
+
+        if(tempArray[found].saleNumberOfItems === 0){
+          tempArray.splice(found, 1);
+          update = {
+            [currentItem.itemCode]: firebase.firestore.FieldValue.delete()
+          }
+        }          
       }
+
+      dbSalesInstance
+        .doc(currentDoc)
+        .update(update)
+        .then(_ => {
+          setIsSaving(false);
+          setSaleItems(tempArray);
+        })
+        .catch((error) => {
+          setIsSaving(false);
+          showNotificationMessage("error", error.message ? error.message : "Error saving data.");
+        });
     }
-    setSaleItems(tempArray)
+    
   }
 
   const removeItemFromLog = (id) => {
-    let itemToRemove = {
-      date: currentDate,
-      branch: currentBranch,
-      id: id,
-    }
-
-    setIsSaving(true);
-    var removeLogItem = functions.httpsCallable('deleteSaleLogItem');
-    return removeLogItem(itemToRemove)
-    .then((result) => {
-      if(result.data.status === "SUCCESS"){
-        setIsSaving(false);
-        return true;
-      } else {
-        showNotificationMessage("error", result.data.message? result.data.message : "Error saving data.");
-        return false;
-      }
+    var tempArray = saleItems.slice();
+    dbSalesInstance
+    .doc(currentDoc)
+    .update({
+      [id]: firebase.firestore.FieldValue.delete()
     })
-    .catch((error) => {
-      var code = error.code;
-      var message = error.message;
+    .then(_ => {
       setIsSaving(false);
-      showNotificationMessage("error", `Error: ${message} Code: ${code}`);
-      return false;
+      setSaleItems(tempArray.filter(item => item.itemCode !== id));
+    })
+    .catch(error => {
+      setIsSaving(false);
+      showNotificationMessage("error", error.message? error.message : "Error saving data.");
     });
-  }
-
-  const addItemFromLog = () => {
-    let found = saleItems.findIndex(element => element.itemCode === currentItem.itemCode);
-
-    if(-1 === found){
-      let itemToAdd = {
-        branch : currentBranch,
-        date : currentDate,
-        itemId : currentItem.itemCode,
-        numberOfSale :  currentReturnState? -currentNumberOfItem: currentNumberOfItem,
-      }
-  
-      setIsSaving(true);
-      var addLogItem = functions.httpsCallable('addSaleLogItem');
-      return addLogItem(itemToAdd)
-      .then((result) => {
-        if(result.data.status === "SUCCESS"){
-          setIsSaving(false);
-          return true;
-        } else {
-          showNotificationMessage("error", result.data.message? result.data.message : "Error saving data.");
-          return false;
-        }
-      })
-      .catch((error) => {
-        var code = error.code;
-        var message = error.message;
-        setIsSaving(false);
-        showNotificationMessage("error", `Error: ${message} Code: ${code}`);
-        return false;
-      });
-     } else {
-        showNotificationMessage("warning", "The item already exists. Please remove the item from the list to re add");
-        return false;
-     }
   }
   
   const setNumberOfItems = (e) => {
@@ -278,54 +283,45 @@ export default function LogSales() {
       tempUpdateObject[element.id] = element.saleNumberOfItems
     });
  
-    let tempSaleItemsObject = {};
-    tempSaleItemsObject.recordItems = tempUpdateObject;
-    tempSaleItemsObject.date = currentDate;
-    tempSaleItemsObject.branch = currentBranch;
+    const branch = currentBranch;
+    const date = currentDate;
 
-    var addLog = functions.httpsCallable('updateSaleLog');
-    addLog(tempSaleItemsObject)
-    .then((result) => {
-      if(result.data.status === "SUCCESS"){
-        setIsSaving(false);
-        showNotificationMessage("success", "Saved the log and updated inventory successfully.");
-        setIsEditable(false);
-      } else {
-        showNotificationMessage("error", result.data.message? result.data.message : "Error saving data.")
-      }
-    })
-    .catch((error) => {
-      var code = error.code;
-      var message = error.message;
+    const tempDate = date.split("-");
+    var newDate = new Date(tempDate[0], tempDate[1] - 1, tempDate[2]);
+
+    const logSnapshot = {
+      branch: branch,
+      date: newDate.getTime(),
+      readable_date: date,
+      ...tempUpdateObject
+    }
+
+    dbSalesInstance
+    .add(logSnapshot)
+    .then(_ => {
       setIsSaving(false);
-      showNotificationMessage("error", `Error: ${message} Code: ${code}`)
+      showNotificationMessage("success", "Saved the log and updated inventory successfully.");
+      setIsEditable(false);
+    })
+    .catch(error => {
+      showNotificationMessage("error", error.message? error.message : "Error saving data.")
     });
   }
 
   const clearLog = () => {
     setIsSaving(true);
     setDelOpen(false);
-    let tempSaleItemsObject = {};
-    tempSaleItemsObject.date = currentDate;
-    tempSaleItemsObject.branch = currentBranch;
 
-    var delLog = functions.httpsCallable('deleteSaleLog');
-    delLog(tempSaleItemsObject)
-    .then((result) => {
-      if(result.data.status === "SUCCESS"){
-        setIsSaving(false);
-        showNotificationMessage("success", "Saved the log and updated inventory successfully.");
-        setIsEditable(true);
-        setSaleItems([]);
-      } else {
-        showNotificationMessage("error", result.data.message? result.data.message : "Error saving data.")
-      }
-    })
-    .catch((error) => {
-      var code = error.code;
-      var message = error.message;
+    dbSalesInstance
+    .doc(currentDoc)
+    .delete()
+    .then(() => {
       setIsSaving(false);
-      showNotificationMessage("error", `Error: ${message} Code: ${code}`)
+      showNotificationMessage("success", "Deleted the log successfully.");
+      setIsEditable(true);
+      setSaleItems([]);
+    }).catch(error => {
+      showNotificationMessage("error", error.message ? error.message : "Error deleting data.")
     });
   }
 
