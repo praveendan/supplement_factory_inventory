@@ -127,8 +127,10 @@ export default function LogSales() {
 
           Object.keys(dataObject).forEach(d => {
             if(d !== 'date' &&
+              d !== 'branch' &&
               d !== 'readable_date' &&
-              d !== 'branch'){
+              productsObject[d]
+              ){
                 tempArray.push({
                   id: d,
                   saleDate: currentDate,
