@@ -174,7 +174,7 @@ export default function StockSynchronizer() {
           totalStockIn: stockIn,
           id: prod.id,
           name: prod.name,
-          category: categoriesObject[prod.category].name,
+          category: categoriesObject[prod.category] && categoriesObject[prod.category].name? categoriesObject[prod.category].name: "deleted",
           calculatedStock: stockIn - salesNumber
         })
       });
