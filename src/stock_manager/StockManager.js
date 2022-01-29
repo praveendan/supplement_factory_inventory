@@ -135,20 +135,20 @@ export default function LogSales() {
           var itemArray = [];
           Object.keys(data).forEach(d => {
             let stockBeforeUpdate = (updateInformationOftheBranchDate[d] && updateInformationOftheBranchDate[d].amount)? data[d] -= updateInformationOftheBranchDate[d].amount : data[d];
-            let productName = "Not available";
-            let catName = "Not available";
-            if(productsObject[d]) {
-              productName = productsObject[d].name;
-              catName = categoriesObject[productsObject[d].category]? categoriesObject[productsObject[d].category].name : "Not available"
+  
+            if(productsObject[d] && productsObject[d].name) {
+              const productName = productsObject[d].name;
+              const catName = categoriesObject[productsObject[d].category]? categoriesObject[productsObject[d].category].name : "Not available";
+              itemArray.push(
+                createData(d, 
+                  productName, 
+                  catName, 
+                  stockBeforeUpdate, 
+                  updateInformationOftheBranchDate[d] && updateInformationOftheBranchDate[d].amount? updateInformationOftheBranchDate[d].amount: 0,
+                  updateInformationOftheBranchDate[d]? updateInformationOftheBranchDate[d].note : { is_predefined: false,text: "" }
+                  ))
             }
-            itemArray.push(
-              createData(d, 
-                productName, 
-                catName, 
-                stockBeforeUpdate, 
-                updateInformationOftheBranchDate[d] && updateInformationOftheBranchDate[d].amount? updateInformationOftheBranchDate[d].amount: 0,
-                updateInformationOftheBranchDate[d]? updateInformationOftheBranchDate[d].note : { is_predefined: false,text: "" }
-                ))
+            
           });
           setStocks(itemArray);
         } else {
