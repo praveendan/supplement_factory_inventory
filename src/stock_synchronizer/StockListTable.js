@@ -16,8 +16,8 @@ const ActionCellRenderer = ({currentStock, ...props}) => {
 export default function StockListTable({ currentStock, accumulatedStocksInOutData}) {
 
   const columns = [
-    { field: "name", flex: 2, headerName: "Name", disableColumnMenu: true,  sortable: false },
-    { field: "category", flex: 2, headerName: "Category", disableColumnMenu: true,  sortable: false },
+    { field: "name", flex: 2, headerName: "Name" },
+    { field: "category", flex: 2, headerName: "Category" },
     { field: "totalSales", width: 130, headerName: "Sales", disableColumnMenu: true,  sortable: false },
     { field: "totalStockIn", width: 130, headerName: "Stocks in", disableColumnMenu: true,  sortable: false },
     { field: "calculatedStock", width: 130, headerName: "Calculated Stocks", disableColumnMenu: true,  sortable: false },
