@@ -75,6 +75,7 @@ const NameCellRender = ({rowData, value, updateName, isEditingDisabled, ...props
   const [isEditing, setIsEditing] = useState(false);
   const [tempValue, setTempValue] = useState(value);
   const [isRecordExists, setIsRecordExists] = useState(false);
+
   const originalValue = value;
   const classes = useStyles();
 
@@ -105,12 +106,13 @@ const NameCellRender = ({rowData, value, updateName, isEditingDisabled, ...props
       <React.Fragment>
         <div className={classes.cellRoot}>
           <p style={{ margin: 0 }}>{value}</p>
-          {
-            !isEditingDisabled &&
-            <IconButton className={classes.cellButton} aria-label="edit" onClick={() => setIsEditing(true)}>
-              <EditIcon />
-            </IconButton>
-          }
+          <IconButton 
+            disabled={isEditingDisabled}
+            className={classes.cellButton} 
+            aria-label="edit" 
+            onClick={() => setIsEditing(true)}>
+            <EditIcon />
+          </IconButton>
         </div>
       </React.Fragment>
     )
@@ -122,17 +124,22 @@ const NameCellRender = ({rowData, value, updateName, isEditingDisabled, ...props
             <TextField className={isRecordExists? clsx(classes.cellButtonInput, classes.cellButtonInputError): classes.cellButtonInput} type="text" variant="outlined" size="small" value={tempValue} onChange={changeValue} />
           </Tooltip>
           <div className={classes.cellButtonContainer}>
-            {
-              !isEditingDisabled &&
-              <React.Fragment>
-                <IconButton className={classes.cellButton} aria-label="edit" onClick={cancelEdit}>
-                  <CancelIcon />
-                </IconButton>
-                <IconButton className={classes.cellButton} aria-label="edit" onClick={saveEdit}>
-                  <SaveIcon />
-                </IconButton>
-              </React.Fragment>
-            }
+            <React.Fragment>
+              <IconButton 
+                disabled={isEditingDisabled}
+                className={classes.cellButton} 
+                aria-label="edit" 
+                onClick={cancelEdit}>
+                <CancelIcon />
+              </IconButton>
+              <IconButton 
+                className={classes.cellButton}
+                disabled={isRecordExists || !tempValue || tempValue === "" || isEditingDisabled}
+                aria-label="edit"
+                onClick={saveEdit}>
+                <SaveIcon />
+              </IconButton>
+            </React.Fragment>
           </div>  
         </div>
       </React.Fragment>
@@ -159,12 +166,13 @@ const ActionCellRenderer = ({isEditingDisabled, ...props}) => {
 
   return (
     <React.Fragment>
-      {
-        !isEditingDisabled &&
-        <IconButton className={classes.cellButton} aria-label="delete" onClick={() => showPrompt(props.row)}>
-          <DeleteIcon />
-        </IconButton>
-      }
+      <IconButton 
+        disabled={isEditingDisabled}
+        className={classes.cellButton}
+        aria-label="delete" 
+        onClick={() => showPrompt(props.row)}>
+        <DeleteIcon />
+      </IconButton>
       <ConfirmationDialog
         id="delete-product-confirmation"
         keepMounted
