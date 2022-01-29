@@ -13,10 +13,11 @@ import DatePicker from '../shared/Datepicker'
 import { dbInstance } from './../firebaseConfig';
 import { ReferenceDataContext } from "./../ReferenceDataContext"
 import Snackbar from './../shared/Notification'
+import { getInitialGridColumnsState } from '@material-ui/data-grid';
 
 // Generate Order Data
 function createData(id, name, numberOfItems) {
-  return { id, name: name? name : "Deleted item", numberOfItems };
+  return name? { id, name, numberOfItems } : null
 }
 
 const useStyles = makeStyles((theme) => ({
@@ -100,22 +101,34 @@ export default function SaleHistory() {
       dbSalesInstance.where("date", ">=", fromDateTimeStamp).where("date", "<=", toDateTimeStamp)
       .get().then((querySnapshot) => {
         querySnapshot.forEach((doc) => {
-          const data = doc.data()[currentBranch];
+          const data = doc.data();
           if(data) {
             Object.keys(data).forEach(itemKey => {
-              if(countObject[itemKey]){
-                countObject[itemKey] += data[itemKey];
-              } else {
-                countObject[itemKey] = data[itemKey];
-              }
+              if(itemKey !== "date" &&
+              itemKey !== "readable_date" &&
+              itemKey !== "branch"
+              ) {
+                if(countObject[itemKey]){
+                  countObject[itemKey] += data[itemKey];
+                } else {
+                  countObject[itemKey] = data[itemKey];
+                }
+              } 
             })
           }
           
         });
         
-        setIsLoading(false);
-        let itemsArray = Object.keys(countObject).map(item => createData(item, productsObject[item]? productsObject[item].name: "Deleted item", countObject[item]))
+        let itemsArray = [];
+
+        Object.keys(countObject).forEach(item => {
+          if(productsObject[item] && productsObject[item].name) {
+            itemsArray.push(createData(item, productsObject[item].name, countObject[item]));
+          }
+        })
+
         setSaleHistory(itemsArray);
+        setIsLoading(false);
       });
 
     }
