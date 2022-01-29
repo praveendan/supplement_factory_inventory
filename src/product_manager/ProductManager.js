@@ -56,13 +56,14 @@ export default function LogSales() {
   const [products, setProducts] = useState([]);
   const [notification, setNotification] = useState("");
   const [notificationBarOpen, setNotificationBarOpen] = useState(false);
+  const [isEditingDisabled, setIsEditingDisabled] = useState(false);
   //error warning info success
   const [notificationSeverity, setNotificationSeverity] = useState("error");
 
   const fixedHeightPaper = clsx(classes.paper, classes.fixedHeight);
 
   useEffect(() => {
-    dbCollectionInstance.onSnapshot((snapshot) => {
+    const unsubscribe = dbCollectionInstance.onSnapshot((snapshot) => {
       var productList = [];
       snapshot.forEach((doc) => {
         productList.push(createData(doc.id, doc.data().category, doc.data().name))
@@ -76,6 +77,8 @@ export default function LogSales() {
       console.error("Error retirving info: ", error);
       setIsLoading(false)
     });
+
+    return () => { unsubscribe(); };
   },[])
 
   const addProduct = () => {
@@ -108,6 +111,31 @@ export default function LogSales() {
       setNotificationBarOpen(true);
       setNotificationSeverity("error");
     });
+  }
+
+  const updateName = (productId, newName) => {
+    console.log(productId);
+    console.log(newName);
+    console.log("saving");
+    setIsEditingDisabled(true);
+    dbCollectionInstance
+      .doc(productId)
+      .update({
+        name: newName
+      })
+      .then(_ => {
+        setIsEditingDisabled(false);
+        setNotification(`The product has been renamed successfully.`);
+        setNotificationBarOpen(true);
+        setNotificationSeverity("success");
+
+      })
+      .catch((error) => {
+        setIsEditingDisabled(false);
+        setNotification(`Error renaming product`);
+        setNotificationBarOpen(true);
+        setNotificationSeverity("error");
+      });
   }
 
   return (
@@ -148,7 +176,13 @@ export default function LogSales() {
         </Grid>
         <Grid item xs={12}>
           <Paper className={fixedHeightPaper}>
-            <ProductListTable rowData={products} isLoading={isLoading} categoriesList={categoriesObject} deleteFunction={deleteFunction}/>
+            <ProductListTable 
+              rowData={products} 
+              isLoading={isLoading} 
+              categoriesList={categoriesObject} 
+              deleteFunction={deleteFunction} 
+              updateName={updateName}
+              isEditingDisabled={isEditingDisabled}/>
           </Paper>
         </Grid>
       </Grid>
