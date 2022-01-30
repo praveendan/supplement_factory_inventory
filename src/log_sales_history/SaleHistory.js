@@ -98,8 +98,12 @@ export default function SaleHistory() {
 
       let countObject = {};
 
-      dbSalesInstance.where("date", ">=", fromDateTimeStamp).where("date", "<=", toDateTimeStamp)
-      .get().then((querySnapshot) => {
+      dbSalesInstance
+      .where("branch", "==", currentBranch)
+      .where("date", ">=", fromDateTimeStamp)
+      .where("date", "<", toDateTimeStamp)
+      .get()
+      .then((querySnapshot) => {
         querySnapshot.forEach((doc) => {
           const data = doc.data();
           if(data) {
