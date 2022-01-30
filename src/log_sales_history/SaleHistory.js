@@ -13,11 +13,10 @@ import DatePicker from '../shared/Datepicker'
 import { dbInstance } from './../firebaseConfig';
 import { ReferenceDataContext } from "./../ReferenceDataContext"
 import Snackbar from './../shared/Notification'
-import { getInitialGridColumnsState } from '@material-ui/data-grid';
 
 // Generate Order Data
-function createData(id, name, numberOfItems) {
-  return name? { id, name, numberOfItems } : null
+function createData(id, name, numberOfItems, category) {
+  return name? { id, name, numberOfItems, category } : null
 }
 
 const useStyles = makeStyles((theme) => ({
@@ -62,6 +61,9 @@ export default function SaleHistory() {
 
   const [saleHistory, setSaleHistory] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [historyPerItem, setHistoryPerItem] = useState({});
+
+  const { categoriesObject } = useContext(ReferenceDataContext);
 
   useEffect(() => {
     const dbProductInstance = dbInstance.collection("products");
@@ -84,19 +86,19 @@ export default function SaleHistory() {
   }, []);
 
   useEffect(() => {
-    if (fromDate && fromDate !== "" && currentDate && currentDate !== "" && currentBranch && currentBranch !== "") {
+    if (fromDate && fromDate !== "" && currentDate && currentDate !== "" && currentBranch && currentBranch !== "" && categoriesObject) {
       setIsLoading(true);
       
-      var myDate = fromDate.split("-");
-      var newDate = new Date( myDate[0], myDate[1] - 1, myDate[2]);
+      const myDate = fromDate.split("-");
+      const newDate = new Date( myDate[0], myDate[1] - 1, myDate[2]);
       const fromDateTimeStamp = newDate.getTime();
 
-      myDate = currentDate.split("-");
-      newDate = new Date( myDate[0], myDate[1] - 1, myDate[2]);
-
-      const toDateTimeStamp = newDate.getTime();
+      const toMyDate = currentDate.split("-");
+      const toNewDate = new Date( toMyDate[0], toMyDate[1] - 1, toMyDate[2]);
+      const toDateTimeStamp = toNewDate.getTime();
 
       let countObject = {};
+      let recordsPerItemObject = {};
 
       dbSalesInstance
       .where("branch", "==", currentBranch)
@@ -117,26 +119,44 @@ export default function SaleHistory() {
                 } else {
                   countObject[itemKey] = data[itemKey];
                 }
+
+                const recordsPerItemObjectEntry = {
+                  amount: data[itemKey],
+                  readable_date: data.readable_date,
+                  date: data.date
+                }
+
+                if(recordsPerItemObject[itemKey]){
+                  recordsPerItemObject[itemKey].push(recordsPerItemObjectEntry);
+                } else {
+                  recordsPerItemObject[itemKey] = [recordsPerItemObjectEntry];
+                }
               } 
             })
           }
           
         });
+
+        setHistoryPerItem(recordsPerItemObject);
         
         let itemsArray = [];
 
         Object.keys(countObject).forEach(item => {
-          if(productsObject[item] && productsObject[item].name) {
-            itemsArray.push(createData(item, productsObject[item].name, countObject[item]));
+          if(productsObject[item] && productsObject[item].name &&
+            categoriesObject[productsObject[item].category] && categoriesObject[productsObject[item].category].name) {
+            itemsArray.push(createData(item, productsObject[item].name, countObject[item], categoriesObject[productsObject[item].category].name));
           }
-        })
-
+        });
         setSaleHistory(itemsArray);
         setIsLoading(false);
+      })
+      .catch(e => {
+        console.log(e)
+        console.log("error")
       });
 
     }
-  }, [fromDate, currentDate, currentBranch])
+  }, [fromDate, currentDate, currentBranch, categoriesObject])
 
   const showNotificationMessage = (severety, message) => {
     setNotification(message);
@@ -196,7 +216,7 @@ export default function SaleHistory() {
         </Grid>
         <Grid item xs={12}>
           <Paper className={fixedHeightPaper}>
-            <SaleHistoryListTable rowData={saleHistory} setSaleHistorys={setSaleHistory} isLoading={isLoading}/>
+            <SaleHistoryListTable rowData={saleHistory} setSaleHistorys={setSaleHistory} isLoading={isLoading} historyPerItem={historyPerItem}/>
           </Paper>
         </Grid>
       </Grid>
