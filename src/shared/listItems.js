@@ -17,6 +17,7 @@ import Collapse from '@material-ui/core/Collapse';
 import ExpandLess from '@material-ui/icons/ExpandLess';
 import ExpandMore from '@material-ui/icons/ExpandMore';
 import CreateIcon from '@material-ui/icons/Create';
+import SettingsIcon from '@material-ui/icons/Settings';
 import { Link } from 'react-router-dom';
 import { makeStyles } from '@material-ui/core/styles';
 import { USER_ROLES } from './../util/constants';
@@ -39,6 +40,7 @@ export const MainListItems = ({userLevel}) => {
   const classes = useStyles();
   const [openProductLogMenu, setOpenProductLogMenu] = React.useState(false);
   const [openProductMenu, setOpenProductMenu] = React.useState(false);
+  const [openAdminMenu, setOpenAdminMenu] = React.useState(false);
 
   const handleLogClick = () => {
     setOpenProductLogMenu(!openProductLogMenu);
@@ -46,6 +48,9 @@ export const MainListItems = ({userLevel}) => {
   const handleProductClick = () => {
     setOpenProductMenu(!openProductMenu);
   };
+  const handleAdminClick = () => {
+    setOpenAdminMenu(!openAdminMenu)
+  }
 
   return (
     <List>
@@ -93,16 +98,6 @@ export const MainListItems = ({userLevel}) => {
             <ListItemText primary="Manage stock" />
           </ListItem>
         </Link>
-        {userLevel === USER_ROLES.SUPER_ADMIN &&
-          <Link className={classes.link} to="/dashboard/sync-stock">
-            <ListItem button>
-              <ListItemIcon>
-                <SyncIcon className={classes.linkIcon}/>
-              </ListItemIcon>
-              <ListItemText primary="Sync Stock" />
-            </ListItem>
-          </Link>
-        }
         <Link className={classes.link} to="/dashboard/manage-branches">
           <ListItem button>
             <ListItemIcon>
@@ -138,6 +133,37 @@ export const MainListItems = ({userLevel}) => {
             </Link>
           </List>
         </Collapse>
+        {userLevel === USER_ROLES.SUPER_ADMIN &&
+          <>
+            <ListItem button className={classes.linkExpandable} onClick={handleAdminClick}>
+              <ListItemIcon>
+                <SettingsIcon className={classes.linkIcon}/>
+              </ListItemIcon>
+              <ListItemText primary="Admin Setting" />
+              {openAdminMenu ? <ExpandLess /> : <ExpandMore />}
+            </ListItem>
+            <Collapse in={openAdminMenu} timeout="auto" unmountOnExit>
+              <List component="div" disablePadding>
+                <Link className={classes.link} to="/dashboard/admin-log-sale">
+                  <ListItem button>
+                    <ListItemIcon>
+                      <ShoppingCartIcon className={classes.linkIcon}/>
+                    </ListItemIcon>
+                    <ListItemText primary="Sales" />
+                  </ListItem>
+                </Link>
+                <Link className={classes.link} to="/dashboard/sync-stock">
+                  <ListItem button>
+                    <ListItemIcon>
+                      <SyncIcon className={classes.linkIcon}/>
+                    </ListItemIcon>
+                    <ListItemText primary="Sync Stock" />
+                  </ListItem>
+                </Link>
+              </List>
+            </Collapse>
+          </>
+        }
       </div>
     </List>
   );
