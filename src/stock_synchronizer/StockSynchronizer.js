@@ -115,7 +115,6 @@ export default function StockSynchronizer() {
             const data = doc.data();
             updateArray.push(data);
           });
-          console.log(updateArray)
           setInventoryUpdates(updateArray);
         });
 
@@ -128,7 +127,6 @@ export default function StockSynchronizer() {
           const data = doc.data();
           updateArray.push(data);
         });
-        console.log(updateArray)
         setSales(updateArray);
       });
       
@@ -139,7 +137,6 @@ export default function StockSynchronizer() {
       .then(async (doc) => {
         if (doc.exists) {
           var data = doc.data();
-          console.log(data);
           setCurrentStock(data)
         }
       })
@@ -313,7 +310,7 @@ export default function StockSynchronizer() {
         </Grid>
         <Grid item xs={12}>
           <Paper className={fixedHeightPaper}>
-            <StockListTable isLoading={isLoading} accumulatedStocksInOutData={accumulatedStocksInOutData} currentStock={currentStock}/>
+            <StockListTable isLoading={isLoading} accumulatedStocksInOutData={accumulatedStocksInOutData} currentStock={currentStock} sales={sales} inventoryUpdates={inventoryUpdates}/>
             <div className={classes.fixedHeightToolBar}>
               <Button
                 variant="contained"
