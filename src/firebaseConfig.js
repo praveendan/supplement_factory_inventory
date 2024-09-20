@@ -4,24 +4,14 @@ import 'firebase/firestore'
 import 'firebase/functions'
 
 var firebaseConfig = {
-  apiKey: "AIzaSyC5zuTL4y3Fp_LThWw4396-46_1eoma1XI",
-  authDomain: "sf-inventory.firebaseapp.com",
-  projectId: "sf-inventory",
-  storageBucket: "sf-inventory.appspot.com",
-  messagingSenderId: "1092517702761",
-  appId: "1:1092517702761:web:3b08d92eac5206f9d786f8",
-  measurementId: "G-QZ3V77T21R"
+  apiKey: "API_KEY",
+  authDomain: "AUTH_DOMAIN",
+  projectId: "PROJ_ID",
+  storageBucket: "STORAGE_BUCKET",
+  messagingSenderId: "MSG_SENDR_ID",
+  appId: "APP_ID",
+  measurementId: "MEASURE_ID"
 };
-
-// const firebaseConfig = {
-//   apiKey: "AIzaSyA1B_kyi4zTzr49O6gkHtl1Ij-jZDafQ5w",
-//   authDomain: "sf-inventory-1.firebaseapp.com",
-//   projectId: "sf-inventory-1",
-//   storageBucket: "sf-inventory-1.appspot.com",
-//   messagingSenderId: "316396475358",
-//   appId: "1:316396475358:web:b1920a76d7950993c4434f",
-//   measurementId: "G-YWCQHDQDBV"
-// };
 
 // Initialize Firebase
 firebase.initializeApp(firebaseConfig);
