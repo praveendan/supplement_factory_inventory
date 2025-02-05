@@ -159,7 +159,15 @@ export const MainListItems = ({userLevel}) => {
                     </ListItemIcon>
                     <ListItemText primary="Sync Stock" />
                   </ListItem>
-                </Link>
+              </Link>
+              <Link className={classes.link} to="/dashboard/script">
+                <ListItem button>
+                  <ListItemIcon>
+                    <SyncIcon className={classes.linkIcon} />
+                  </ListItemIcon>
+                  <ListItemText primary="scripts" />
+                </ListItem>
+              </Link>
               </List>
             </Collapse>
           </>
